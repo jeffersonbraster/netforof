@@ -1,0 +1,4 @@
+User-Agent: *
+Allow: /
+Host: https://netfor.club
+Sitemap: https://netfor.club/sitemap.xml
