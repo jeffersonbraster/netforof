@@ -8,7 +8,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@netfor/db": "workspace:*"
+    "@netfor/db": "workspace:*",
+    "cheerio": "^1.2.0",
+    "drizzle-orm": "^0.44.7",
+    "fast-xml-parser": "^5.10.1"
   },
   "devDependencies": {
     "@types/node": "^22.20.1",
