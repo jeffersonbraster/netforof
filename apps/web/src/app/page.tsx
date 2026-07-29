@@ -5,25 +5,30 @@ import { CompactCard, HeroCard, NewsCard } from "@/components/news/news-card";
 import { ButtonLink } from "@/components/ui/button";
 import { SectionTitle } from "@/components/ui/section-title";
 import { AdSlot } from "@/components/widgets/ad-slot";
+import { formatKickoff } from "@/lib/format";
 import { ChantsWidget } from "@/components/widgets/chants-widget";
 import { MiniStandings } from "@/components/widgets/mini-standings";
 import { MostRead } from "@/components/widgets/most-read";
-import { mockMatches, mockStandings } from "@/lib/mock-data";
 import { getChants } from "@/modules/chants/queries";
+import { getRecentResults, getStandings, getTickerMatches } from "@/modules/matches/queries";
 import { getHomeArticles, getMostReadWeek } from "@/modules/news/queries";
 
 export default async function Home() {
   "use cache";
-  cacheTag("articles", "chants");
+  cacheTag("articles", "chants", "matches", "standings");
   cacheLife("hours");
 
-  const [{ hero, secondary, latest }, mostRead, chants] = await Promise.all([
-    getHomeArticles(),
-    getMostReadWeek(),
-    getChants(),
-  ]);
+  const [{ hero, secondary, latest }, mostRead, chants, tickerMatches, standings, recentResults] =
+    await Promise.all([
+      getHomeArticles(),
+      getMostReadWeek(),
+      getChants(),
+      getTickerMatches(),
+      getStandings(),
+      getRecentResults(3),
+    ]);
 
-  const finishedMatches = mockMatches.filter((m) => m.status === "finished");
+  const miniTable = standings.slice(0, 6);
   const chantSummaries = chants.slice(0, 3).map((chant) => ({
     title: chant.title,
     slug: chant.slug,
@@ -33,7 +38,7 @@ export default async function Home() {
 
   return (
     <>
-      <MatchTicker matches={mockMatches} />
+      <MatchTicker matches={tickerMatches} />
 
       <div className="mx-auto max-w-6xl space-y-10 px-4 py-8">
         {hero && (
@@ -69,7 +74,7 @@ export default async function Home() {
 
           <aside className="space-y-8">
             <MostRead items={mostRead} />
-            <MiniStandings standings={mockStandings} />
+            <MiniStandings standings={miniTable} />
             <ChantsWidget chants={chantSummaries} />
             <AdSlot format="rectangle" label="Patrocínio" />
           </aside>
@@ -80,18 +85,18 @@ export default async function Home() {
             Últimos Jogos
           </SectionTitle>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {finishedMatches.map((match) => (
+            {recentResults.map((match) => (
               <div key={match.id} className="rounded-xl border border-line bg-surface p-5">
                 <p className="mb-3 text-[11px] font-medium tracking-wide text-muted uppercase">
                   {match.competition}
-                  {match.round ? ` · ${match.round}` : ""}
                 </p>
                 <p className="font-display text-lg font-bold">
                   {match.homeTeam} <span className="text-primary">{match.homeScore}</span> ×{" "}
                   <span className="text-primary">{match.awayScore}</span> {match.awayTeam}
                 </p>
                 <p className="mt-2 text-xs text-muted">
-                  {match.kickoffLabel} · {match.stadium}
+                  {formatKickoff(match.kickoffAt)}
+                  {match.stadium ? ` · ${match.stadium}` : ""}
                 </p>
               </div>
             ))}

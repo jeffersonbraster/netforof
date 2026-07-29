@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "tsx src/index.ts",
+    "matches": "tsx src/matches/index.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
