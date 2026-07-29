@@ -1,0 +1,24 @@
+{
+  "id": "netfor_id",
+  "name": "NetFor",
+  "short_name": "NetFor",
+  "description": "Todas as noticias do Fortaleza em um só lugar, fique por dentro de tudo o que acontece no maior time do norte e nordeste",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "background_color": "#06092B",
+  "display": "standalone",
+  "start_url": "/",
+  "theme_color": "#06092B",
+  "scope": ".",
+  "orientation": "portrait"
+}

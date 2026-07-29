@@ -21,8 +21,7 @@ async function seed() {
     .returning();
 
   const sourceId =
-    ge?.id ??
-    (await db.query.sources.findFirst({ where: (s, { eq }) => eq(s.slug, "ge") }))?.id;
+    ge?.id ?? (await db.query.sources.findFirst({ where: (s, { eq }) => eq(s.slug, "ge") }))?.id;
 
   if (!sourceId) {
     throw new Error("Falha ao criar/localizar source de seed");

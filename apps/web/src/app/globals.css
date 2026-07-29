@@ -1,26 +1,58 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f5f6fa;
+  --surface: #ffffff;
+  --surface-2: #edf0f6;
+  --line: #dfe4ee;
+  --foreground: #10141f;
+  --muted: #5b6472;
+  --brand-red: #e11d2e;
+  --brand-blue: #003da5;
+  --link: #1c4fd6;
+}
+
+[data-theme="dark"] {
+  --background: #0a0e1a;
+  --surface: #111827;
+  --surface-2: #182136;
+  --line: #232c44;
+  --foreground: #f1f4fa;
+  --muted: #8a93a8;
+  --link: #7da2ff;
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-muted: var(--muted);
+  --color-primary: var(--brand-red);
+  --color-secondary: var(--brand-blue);
+  --color-link: var(--link);
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-archivo);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Esconde scrollbar em trilhos horizontais (ticker, nav mobile) sem perder o scroll */
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }
