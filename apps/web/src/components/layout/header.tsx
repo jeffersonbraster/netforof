@@ -25,7 +25,7 @@ export function Header() {
             className="hidden dark:block"
           />
           <Image
-            src="/netfor-logo-full.svg"
+            src="/netfor-blue.svg"
             alt="NET FOR"
             width={110}
             height={30}

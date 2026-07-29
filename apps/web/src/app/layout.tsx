@@ -19,7 +19,7 @@ const archivo = Archivo({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://netfor.com.br"),
+  metadataBase: new URL("https://netfor.club"),
   title: {
     default: "NET FOR — Todas as notícias do Leão em um só lugar",
     template: "%s | NET FOR",
