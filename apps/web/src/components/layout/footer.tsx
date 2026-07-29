@@ -1,3 +1,4 @@
+import { cacheLife } from "next/cache";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -79,6 +80,12 @@ const socials = [
   },
 ];
 
+async function CopyrightYear() {
+  "use cache";
+  cacheLife("days");
+  return <>{new Date().getFullYear()}</>;
+}
+
 export function Footer() {
   return (
     <footer className="mt-12 border-t border-line bg-surface">
@@ -152,7 +159,9 @@ export function Footer() {
 
       <div className="border-t border-line">
         <div className="mx-auto max-w-6xl px-4 py-4 text-center text-xs text-muted sm:text-left">
-          <p>© {new Date().getFullYear()} NET FOR</p>
+          <p>
+            © <CopyrightYear /> NET FOR
+          </p>
         </div>
       </div>
     </footer>

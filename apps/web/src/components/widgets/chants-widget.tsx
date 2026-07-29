@@ -2,9 +2,16 @@ import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
 import { SectionTitle } from "@/components/ui/section-title";
-import type { MockChant } from "@/lib/mock-data";
 
-export function ChantsWidget({ chants }: { chants: MockChant[] }) {
+export interface ChantSummary {
+  title: string;
+  slug: string;
+  category: "hino" | "canto";
+  firstLine: string;
+}
+
+export function ChantsWidget({ chants }: { chants: ChantSummary[] }) {
+  if (chants.length === 0) return null;
   return (
     <section aria-label="Cantos da torcida">
       <SectionTitle href="/cantos-da-torcida" linkLabel="Todos os cantos">

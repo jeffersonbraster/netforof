@@ -105,8 +105,7 @@ export function parseNewsSitemap(xml: string): NewsSitemapItem[] {
     if (!loc || !title) return [];
 
     const image = url["image:image"] as Record<string, unknown> | undefined;
-    const published =
-      textOf(news?.["news:publication_date"] ?? "") || textOf(url.lastmod ?? "");
+    const published = textOf(news?.["news:publication_date"] ?? "") || textOf(url.lastmod ?? "");
 
     return [
       {

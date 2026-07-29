@@ -31,7 +31,8 @@ export async function politeFetch(url: string, init: RequestInit = {}): Promise<
         ...init,
         headers: {
           "user-agent": USER_AGENT,
-          accept: "text/html,application/xhtml+xml,application/xml,application/json;q=0.9,*/*;q=0.8",
+          accept:
+            "text/html,application/xhtml+xml,application/xml,application/json;q=0.9,*/*;q=0.8",
           ...init.headers,
         },
         redirect: "follow",

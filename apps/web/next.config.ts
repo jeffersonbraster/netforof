@@ -1,7 +1,14 @@
+import { config } from "dotenv";
 import type { NextConfig } from "next";
+
+// Carrega o .env da raiz do monorepo (Next só lê .env do diretório do app)
+config({ path: "../../.env" });
 
 const nextConfig: NextConfig = {
   transpilePackages: ["@netfor/db"],
+  cacheComponents: true,
+  // View Transitions (React <ViewTransition>): pendente — o componente ainda é
+  // exclusivo do canal experimental do React; reavaliar quando estabilizar.
   images: {
     remotePatterns: [
       // Portais agregados — liberados conforme adapters da Fase 3

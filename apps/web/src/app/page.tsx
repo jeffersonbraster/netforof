@@ -1,3 +1,5 @@
+import { cacheLife, cacheTag } from "next/cache";
+
 import { MatchTicker } from "@/components/matches/match-ticker";
 import { CompactCard, HeroCard, NewsCard } from "@/components/news/news-card";
 import { ButtonLink } from "@/components/ui/button";
@@ -6,41 +8,50 @@ import { AdSlot } from "@/components/widgets/ad-slot";
 import { ChantsWidget } from "@/components/widgets/chants-widget";
 import { MiniStandings } from "@/components/widgets/mini-standings";
 import { MostRead } from "@/components/widgets/most-read";
-import { mockArticles, mockChants, mockMatches, mockStandings } from "@/lib/mock-data";
+import { mockMatches, mockStandings } from "@/lib/mock-data";
+import { getChants } from "@/modules/chants/queries";
+import { getHomeArticles, getMostReadWeek } from "@/modules/news/queries";
 
-export default function Home() {
-  const hero = mockArticles.find((a) => a.isHighlighted) ?? mockArticles[0]!;
-  const secondary = mockArticles.filter((a) => a.id !== hero.id).slice(0, 4);
-  const latest = mockArticles.filter((a) => a.id !== hero.id);
+export default async function Home() {
+  "use cache";
+  cacheTag("articles", "chants");
+  cacheLife("hours");
+
+  const [{ hero, secondary, latest }, mostRead, chants] = await Promise.all([
+    getHomeArticles(),
+    getMostReadWeek(),
+    getChants(),
+  ]);
+
   const finishedMatches = mockMatches.filter((m) => m.status === "finished");
+  const chantSummaries = chants.slice(0, 3).map((chant) => ({
+    title: chant.title,
+    slug: chant.slug,
+    category: chant.category,
+    firstLine: `${chant.lyrics.split("\n")[0] ?? ""}…`,
+  }));
 
   return (
     <>
       <MatchTicker matches={mockMatches} />
 
       <div className="mx-auto max-w-6xl space-y-10 px-4 py-8">
-        {/* Hero: destaque + 4 secundárias */}
-        <section aria-label="Destaques">
-          <div className="mb-4 flex items-center justify-between">
+        {hero && (
+          <section aria-label="Destaques">
             <SectionTitle>Destaques</SectionTitle>
-            <p className="mb-4 text-xs text-muted">
-              <span className="mr-1.5 inline-block size-1.5 animate-pulse rounded-full bg-emerald-500 align-middle" />
-              Atualizado há 12 min
-            </p>
-          </div>
-          <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
-            <HeroCard article={hero} />
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-              {secondary.map((article) => (
-                <CompactCard key={article.id} article={article} />
-              ))}
+            <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
+              <HeroCard article={hero} />
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                {secondary.map((article) => (
+                  <CompactCard key={article.id} article={article} />
+                ))}
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
         <AdSlot format="leaderboard" />
 
-        {/* Últimas + sidebar */}
         <div className="grid gap-10 lg:grid-cols-[1fr_320px]">
           <section aria-label="Últimas notícias">
             <SectionTitle href="/noticias">Últimas Notícias</SectionTitle>
@@ -57,14 +68,13 @@ export default function Home() {
           </section>
 
           <aside className="space-y-8">
-            <MostRead />
+            <MostRead items={mostRead} />
             <MiniStandings standings={mockStandings} />
-            <ChantsWidget chants={mockChants} />
+            <ChantsWidget chants={chantSummaries} />
             <AdSlot format="rectangle" label="Patrocínio" />
           </aside>
         </div>
 
-        {/* Últimos jogos / vídeos */}
         <section aria-label="Últimos jogos">
           <SectionTitle href="/videos" linkLabel="Ver vídeos">
             Últimos Jogos
@@ -72,7 +82,7 @@ export default function Home() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {finishedMatches.map((match) => (
               <div key={match.id} className="rounded-xl border border-line bg-surface p-5">
-                <p className="mb-3 text-[11px] font-medium uppercase tracking-wide text-muted">
+                <p className="mb-3 text-[11px] font-medium tracking-wide text-muted uppercase">
                   {match.competition}
                   {match.round ? ` · ${match.round}` : ""}
                 </p>

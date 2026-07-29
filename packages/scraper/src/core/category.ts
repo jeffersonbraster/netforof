@@ -1,8 +1,23 @@
 import { removeAccents } from "./text";
 
 const rules: Array<{ category: string; keywords: string[] }> = [
-  { category: "Mercado da Bola", keywords: ["mercado", "contrat", "negoci", "reforc", "rescis", "emprest", "proposta", "sondagem"] },
-  { category: "Base", keywords: ["sub-15", "sub-17", "sub-20", "sub 20", "base do", "categorias de base"] },
+  {
+    category: "Mercado da Bola",
+    keywords: [
+      "mercado",
+      "contrat",
+      "negoci",
+      "reforc",
+      "rescis",
+      "emprest",
+      "proposta",
+      "sondagem",
+    ],
+  },
+  {
+    category: "Base",
+    keywords: ["sub-15", "sub-17", "sub-20", "sub 20", "base do", "categorias de base"],
+  },
   { category: "Feminino", keywords: ["feminino", "feminina", "leoas"] },
   { category: "Copa do Nordeste", keywords: ["copa do nordeste", "lampions"] },
   { category: "Copa do Brasil", keywords: ["copa do brasil"] },

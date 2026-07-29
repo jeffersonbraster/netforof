@@ -2,14 +2,15 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
-import type { MockArticle } from "@/lib/mock-data";
+import { formatShortDateTime } from "@/lib/format";
+import type { ArticleCard } from "@/modules/news/types";
 
 function CardImage({
   article,
   sizes,
   priority = false,
 }: {
-  article: MockArticle;
+  article: ArticleCard;
   sizes: string;
   priority?: boolean;
 }) {
@@ -32,7 +33,7 @@ function CardImage({
   );
 }
 
-export function NewsCard({ article }: { article: MockArticle }) {
+export function NewsCard({ article }: { article: ArticleCard }) {
   return (
     <article className="group overflow-hidden rounded-xl border border-line bg-surface transition-colors hover:border-primary/40">
       <Link href={`/noticias/${article.slug}`} className="block">
@@ -41,21 +42,21 @@ export function NewsCard({ article }: { article: MockArticle }) {
         </div>
         <div className="space-y-2 p-4">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="category">{article.category}</Badge>
+            {article.category && <Badge variant="category">{article.category}</Badge>}
             <Badge variant="source">{article.sourceName}</Badge>
           </div>
-          <h3 className="font-display text-base font-bold leading-snug group-hover:text-primary">
+          <h3 className="font-display text-base leading-snug font-bold group-hover:text-primary">
             {article.title}
           </h3>
           <p className="line-clamp-2 text-sm leading-relaxed text-muted">{article.excerpt}</p>
-          <p className="text-xs text-muted">{article.publishedLabel}</p>
+          <p className="text-xs text-muted">{formatShortDateTime(article.publishedAt)}</p>
         </div>
       </Link>
     </article>
   );
 }
 
-export function HeroCard({ article }: { article: MockArticle }) {
+export function HeroCard({ article }: { article: ArticleCard }) {
   return (
     <article className="group relative overflow-hidden rounded-xl border border-line">
       <Link href={`/noticias/${article.slug}`} className="block">
@@ -65,10 +66,10 @@ export function HeroCard({ article }: { article: MockArticle }) {
         </div>
         <div className="absolute inset-x-0 bottom-0 space-y-2 p-5">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="category">{article.category}</Badge>
+            {article.category && <Badge variant="category">{article.category}</Badge>}
             <Badge variant="source">{article.sourceName}</Badge>
           </div>
-          <h2 className="font-display text-xl font-extrabold leading-tight text-white sm:text-2xl">
+          <h2 className="font-display text-xl leading-tight font-extrabold text-white sm:text-2xl">
             {article.title}
           </h2>
           <p className="line-clamp-2 max-w-xl text-sm text-white/75">{article.excerpt}</p>
@@ -78,7 +79,7 @@ export function HeroCard({ article }: { article: MockArticle }) {
   );
 }
 
-export function CompactCard({ article }: { article: MockArticle }) {
+export function CompactCard({ article }: { article: ArticleCard }) {
   return (
     <article className="group">
       <Link href={`/noticias/${article.slug}`} className="flex gap-3">
@@ -86,11 +87,11 @@ export function CompactCard({ article }: { article: MockArticle }) {
           <CardImage article={article} sizes="112px" />
         </div>
         <div className="min-w-0 space-y-1">
-          <h3 className="line-clamp-2 text-sm font-semibold leading-snug group-hover:text-primary">
+          <h3 className="line-clamp-2 text-sm leading-snug font-semibold group-hover:text-primary">
             {article.title}
           </h3>
           <p className="text-xs text-muted">
-            {article.sourceName} · {article.publishedLabel}
+            {article.sourceName} · {formatShortDateTime(article.publishedAt)}
           </p>
         </div>
       </Link>

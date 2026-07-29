@@ -6,7 +6,8 @@ import type { NewsSource, RawArticle } from "../types";
 
 const PAGE_URL = "https://www.opovo.com.br/esportes/futebol/times/fortaleza/";
 // Matérias têm URL /times/fortaleza/AAAA/MM/DD/slug.html
-const ARTICLE_PATTERN = /\/esportes\/futebol\/times\/fortaleza\/(\d{4})\/(\d{2})\/(\d{2})\/[^"?#]+\.html$/;
+const ARTICLE_PATTERN =
+  /\/esportes\/futebol\/times\/fortaleza\/(\d{4})\/(\d{2})\/(\d{2})\/[^"?#]+\.html$/;
 
 export const oPovo: NewsSource = {
   slug: "opovo",

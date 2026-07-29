@@ -77,7 +77,9 @@ async function main() {
     await notifyRevalidate();
   }
 
-  console.log(`\nConcluído em ${((Date.now() - startedAt) / 1000).toFixed(1)}s — ${totalInserted} novas matérias.`);
+  console.log(
+    `\nConcluído em ${((Date.now() - startedAt) / 1000).toFixed(1)}s — ${totalInserted} novas matérias.`,
+  );
   if (hasErrors) process.exitCode = 1;
 }
 
