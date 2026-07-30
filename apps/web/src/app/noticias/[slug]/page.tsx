@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { SectionTitle } from "@/components/ui/section-title";
 import { AdSlot } from "@/components/widgets/ad-slot";
 import { formatLongDate, formatShortDateTime } from "@/lib/format";
+import { breadcrumbJsonLd, JsonLd, SITE_URL } from "@/lib/seo";
 import { getArticleBySlug } from "@/modules/news/queries";
 
 type Params = Promise<{ slug: string }>;
@@ -43,9 +44,31 @@ export default async function ArticlePage({ params }: { params: Params }) {
   const article = await getArticleBySlug(slug);
   if (!article) notFound();
 
+  const newsArticleJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "NewsArticle",
+    headline: article.title,
+    description: article.excerpt,
+    image: article.imageUrl ? [article.imageUrl] : undefined,
+    datePublished: article.publishedAt.toISOString(),
+    inLanguage: "pt-BR",
+    url: `${SITE_URL}/noticias/${article.slug}`,
+    isBasedOn: article.originalUrl,
+    author: { "@type": "Organization", name: article.sourceName },
+    publisher: { "@type": "Organization", name: "NET FOR", url: SITE_URL },
+  };
+
   return (
     <article className="mx-auto max-w-3xl px-4 py-8">
       <ViewTracker slug={article.slug} />
+      <JsonLd data={newsArticleJsonLd} />
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: "Início", url: "/" },
+          { name: "Notícias", url: "/noticias" },
+          { name: article.title, url: `/noticias/${article.slug}` },
+        ])}
+      />
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
         {article.category && <Badge variant="category">{article.category}</Badge>}

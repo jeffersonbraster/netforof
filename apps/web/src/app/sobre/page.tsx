@@ -35,7 +35,7 @@ export default function SobrePage() {
           Para sugestões, dicas ou informações entre em contato pelo e-mail{" "}
           <a
             href="mailto:contato@netfor.club"
-            className="text-link hover:underline underline-offset-4"
+            className="text-link underline underline-offset-4 hover:text-foreground"
           >
             contato@netfor.club
           </a>

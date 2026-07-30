@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { SectionTitle } from "@/components/ui/section-title";
 import { formatKickoff } from "@/lib/format";
+import { JsonLd } from "@/lib/seo";
 import { getAgenda } from "@/modules/matches/queries";
 import type { Match } from "@netfor/db";
 
@@ -78,8 +79,23 @@ export default async function AgendaPage() {
 
   const { upcoming, results } = await getAgenda();
 
+  const sportsEventsJsonLd = {
+    "@context": "https://schema.org",
+    "@graph": upcoming.slice(0, 10).map((match) => ({
+      "@type": "SportsEvent",
+      name: `${match.homeTeam} x ${match.awayTeam} — ${match.competition}`,
+      startDate: match.kickoffAt.toISOString(),
+      sport: "Soccer",
+      eventStatus: "https://schema.org/EventScheduled",
+      location: match.stadium ? { "@type": "Place", name: match.stadium } : undefined,
+      homeTeam: { "@type": "SportsTeam", name: match.homeTeam },
+      awayTeam: { "@type": "SportsTeam", name: match.awayTeam },
+    })),
+  };
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
+      <JsonLd data={sportsEventsJsonLd} />
       <section aria-label="Próximos jogos">
         <SectionTitle>Próximos Jogos</SectionTitle>
         {upcoming.length === 0 ? (

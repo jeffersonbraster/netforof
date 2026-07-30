@@ -10,6 +10,9 @@ const nextConfig: NextConfig = {
   // View Transitions (React <ViewTransition>): pendente — o componente ainda é
   // exclusivo do canal experimental do React; reavaliar quando estabilizar.
   images: {
+    // Transformações de imagens externas ficam cacheadas por 24h no mínimo
+    minimumCacheTTL: 86400,
+    qualities: [60, 75],
     remotePatterns: [
       // Portais agregados — liberados conforme adapters da Fase 3
       { protocol: "https", hostname: "*.glbimg.com" },

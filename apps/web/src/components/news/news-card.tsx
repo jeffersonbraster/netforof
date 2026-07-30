@@ -22,6 +22,7 @@ function CardImage({
         fill
         sizes={sizes}
         priority={priority}
+        quality={priority ? 60 : 75}
         className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
       />
     );
