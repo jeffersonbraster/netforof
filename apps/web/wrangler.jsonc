@@ -21,14 +21,14 @@
   "kv_namespaces": [
     {
       "binding": "NEXT_INC_CACHE_KV",
-      "id": "PREENCHER_ID_DO_KV"
+      "id": "0827928af23444fabd166d165338459d"
     }
   ],
   "d1_databases": [
     {
       "binding": "NEXT_TAG_CACHE_D1",
       "database_name": "netfor-tag-cache",
-      "database_id": "PREENCHER_ID_DO_D1"
+      "database_id": "d43fb0af-3484-4e82-9e58-1d9ccce5f1de"
     }
   ],
   "durable_objects": {
