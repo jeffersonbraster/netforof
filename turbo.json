@@ -1,6 +1,14 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalEnv": ["DATABASE_URL", "REVALIDATE_SECRET", "API_FOOTBALL_KEY", "REWRITE_MODE"],
+  "globalEnv": [
+    "DATABASE_URL",
+    "REVALIDATE_SECRET",
+    "API_FOOTBALL_KEY",
+    "REWRITE_MODE",
+    "NEXT_PUBLIC_ADSENSE_CLIENT",
+    "NEXT_PUBLIC_ADSENSE_SLOT_LEADERBOARD",
+    "NEXT_PUBLIC_ADSENSE_SLOT_RECTANGLE"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

@@ -158,9 +158,17 @@ export function Footer() {
       </div>
 
       <div className="border-t border-line">
-        <div className="mx-auto max-w-6xl px-4 py-4 text-center text-xs text-muted sm:text-left">
+        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-4 text-center text-xs text-muted sm:flex-row sm:items-center sm:justify-between sm:text-left">
           <p>
             © <CopyrightYear /> NET FOR
+          </p>
+          <p className="space-x-4">
+            <Link href="/privacidade" className="transition-colors hover:text-foreground">
+              Privacidade
+            </Link>
+            <Link href="/termos" className="transition-colors hover:text-foreground">
+              Termos de Uso
+            </Link>
           </p>
         </div>
       </div>

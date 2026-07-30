@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import { Archivo, Inter } from "next/font/google";
 
+import Script from "next/script";
+
 import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
+import { ADSENSE_CLIENT } from "@/lib/ads";
 import { JsonLd, webSiteJsonLd } from "@/lib/seo";
 
 import "./globals.css";
@@ -63,6 +66,14 @@ export default function RootLayout({
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />
+        {/* Anúncios carregam lazy (pós-load) — não competem com o LCP */}
+        {ADSENSE_CLIENT && (
+          <Script
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`}
+            strategy="lazyOnload"
+            crossOrigin="anonymous"
+          />
+        )}
       </body>
     </html>
   );

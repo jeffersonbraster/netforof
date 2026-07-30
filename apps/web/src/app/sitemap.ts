@@ -29,6 +29,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/videos`, changeFrequency: "daily", priority: 0.6 },
     { url: `${SITE_URL}/cantos-da-torcida`, changeFrequency: "monthly", priority: 0.6 },
     { url: `${SITE_URL}/sobre`, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${SITE_URL}/privacidade`, changeFrequency: "yearly", priority: 0.2 },
+    { url: `${SITE_URL}/termos`, changeFrequency: "yearly", priority: 0.2 },
   ];
 
   const chantPages: MetadataRoute.Sitemap = allChants.map((chant) => ({

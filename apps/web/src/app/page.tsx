@@ -9,6 +9,7 @@ import { formatKickoff } from "@/lib/format";
 import { ChantsWidget } from "@/components/widgets/chants-widget";
 import { MiniStandings } from "@/components/widgets/mini-standings";
 import { MostRead } from "@/components/widgets/most-read";
+import { SponsorCard } from "@/components/widgets/sponsor-card";
 import { getChants } from "@/modules/chants/queries";
 import { getRecentResults, getStandings, getTickerMatches } from "@/modules/matches/queries";
 import { getHomeArticles, getMostReadWeek } from "@/modules/news/queries";
@@ -76,7 +77,7 @@ export default async function Home() {
             <MostRead items={mostRead} />
             <MiniStandings standings={miniTable} />
             <ChantsWidget chants={chantSummaries} />
-            <AdSlot format="rectangle" label="Patrocínio" />
+            <SponsorCard />
           </aside>
         </div>
 

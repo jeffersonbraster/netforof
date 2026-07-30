@@ -4,10 +4,7 @@ export const SITE_NAME = "NET FOR";
 /** Injeta JSON-LD estruturado. Uso: <JsonLd data={{...}} /> */
 export function JsonLd({ data }: { data: Record<string, unknown> }) {
   return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
-    />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }} />
   );
 }
 

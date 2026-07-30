@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Suspense } from "react";
+import { Fragment, Suspense } from "react";
 
 import { NewsCard } from "@/components/news/news-card";
+import { AdSlot } from "@/components/widgets/ad-slot";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import { SectionTitle } from "@/components/ui/section-title";
@@ -77,8 +78,16 @@ async function NewsList({ searchParams }: { searchParams: SearchParams }) {
         </p>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((article) => (
-            <NewsCard key={article.id} article={article} />
+          {items.map((article, index) => (
+            <Fragment key={article.id}>
+              <NewsCard article={article} />
+              {/* In-feed a cada 6 cards (plano, seção 8) — largura total do grid */}
+              {(index + 1) % 6 === 0 && index + 1 < items.length && (
+                <div className="sm:col-span-2 lg:col-span-3">
+                  <AdSlot format="leaderboard" />
+                </div>
+              )}
+            </Fragment>
           ))}
         </div>
       )}
