@@ -83,6 +83,23 @@ Configurar em _Settings → Secrets and variables → Actions_:
 - [ ] Patrocínio: substituir o placeholder de `sponsor-card.tsx` pelo banner do patrocinador
       (somente casas licenciadas SPA/MF; manter selo +18 e aviso de jogo responsável)
 
+## Segurança
+
+Headers vão todos pelo `headers()` do `next.config.ts` — CSP, HSTS (2 anos, preload),
+`X-Content-Type-Options`, `Referrer-Policy`, `X-Frame-Options`, `Permissions-Policy`.
+
+- **`script-src` tem `'unsafe-inline'` de propósito**: o Next injeta script de
+  hidratação e o boot de tema roda antes do React. Travar exigiria nonce por
+  requisição, incompatível com HTML cacheado na borda. O valor da CSP aqui está em
+  `frame-ancestors`, `base-uri`, `form-action` e `object-src`.
+- **Ao ativar o AdSense**, liberar os domínios do Google em `script-src`/`frame-src`/
+  `img-src`, senão o anúncio é bloqueado pela CSP.
+- **`/api/views` exige mesma origem** (`Origin` + `Sec-Fetch-Site`) e slug no formato
+  esperado. Isso é higiene, não autenticação: barra abuso trivial, mas **rate limit
+  por IP continua pendente** — é regra na borda da Cloudflare (o plano free permite uma).
+- `postcss` e `sharp` aparecem no `pnpm audit` via Next: são build-time, não rodam no
+  Worker. Só somem quando o Next atualizar as transitivas.
+
 ## Cota do KV (plano free)
 
 O cache incremental vive no KV, que no plano gratuito dá **1000 escritas/dia** —
