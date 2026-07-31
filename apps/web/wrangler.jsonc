@@ -57,6 +57,9 @@
   // zona. Marcado noindex em next.config.ts para não duplicar conteúdo.
   // Desligar quando o Bot Fight Mode da zona for resolvido.
   "workers_dev": true,
+  // Sem URLs de preview: com workers_dev ligado elas viriam por padrão e cada
+  // deploy publicaria mais um hostname servindo o site inteiro.
+  "preview_urls": false,
   "vars": {
     "REWRITE_MODE": "false",
   },

@@ -71,10 +71,12 @@ Configurar em _Settings → Secrets and variables → Actions_:
       cria um *null MX* (`MX .`) e `SPF -all` por padrão, que bloqueiam o endereço
       publicado no site; ambos precisam ser removidos antes de habilitar
 - [x] Atualizar secret `REVALIDATE_URL` para `https://netfor.com.br/api/revalidate`
-- [ ] **Liberar o runner do Actions na Cloudflare**: a borda devolve 403 para o POST
-      em `/api/revalidate` vindo do GitHub (a rota em si só devolve 401 ou 200).
-      Conferir em _Security → Events_ qual serviço barrou — se for **Bot Fight Mode**,
-      só desligando (ele não aceita exceção por regra de WAF)
+- [ ] **Desligar o Bot Fight Mode da zona** (_Security → Bots_): ele devolve Managed
+      Challenge (`403` + `cf-mitigated: challenge` + "Just a moment...") ao IP do runner
+      do Actions, quebrando o webhook de revalidação. Não aceita exceção por regra de
+      WAF. Enquanto estiver ligado, o scraper usa a rota de escape via `workers.dev`
+      (ver `REVALIDATE_FALLBACK_URL` nos workflows); depois de desligar, remover
+      `workers_dev`/`preview_urls` do `wrangler.jsonc` e o fallback do `revalidate.ts`
 - [ ] [Google Search Console](https://search.google.com/search-console): verificar domínio e enviar `sitemap.xml`
 - [ ] [Google News Publisher Center](https://publishercenter.google.com): cadastrar o portal + feed RSS (`/noticias/rss`)
 - [ ] Analytics: ativar **Cloudflare Web Analytics** (gratuito, sem cookies) no dashboard do domínio
@@ -82,6 +84,24 @@ Configurar em _Settings → Secrets and variables → Actions_:
       (leaderboard e retângulo 336x280) e preencher `NEXT_PUBLIC_ADSENSE_*` nos secrets/env de build
 - [ ] Patrocínio: substituir o placeholder de `sponsor-card.tsx` pelo banner do patrocinador
       (somente casas licenciadas SPA/MF; manter selo +18 e aviso de jogo responsável)
+
+## Cota do KV (plano free)
+
+O cache incremental vive no KV, que no plano gratuito dá **1000 escritas/dia** —
+estourado em 31/07/2026. O que gasta, por ordem:
+
+- **69 puts por deploy**: `opennextjs-cloudflare deploy` sempre roda `populateCache`
+  antes do `wrangler deploy`, sem flag para pular. Deploy que falha depois disso já
+  gastou os 69. Com a cota estourada nenhum deploy passa — para subir assim mesmo:
+  `npx opennextjs-cloudflare build && OPEN_NEXT_DEPLOY=true npx wrangler deploy`.
+- **`cacheLife("hours")` em ~30 entradas ≈ 720 puts/dia** só de expiração natural.
+  É redundante com o `revalidateTag` do scraper — pendente de correção.
+- Builds antigos **nunca são limpos** (`incremental-cache/<buildId>/`). Deleção tem
+  cota própria e funciona mesmo com escrita bloqueada.
+
+O buildId vivo aparece como `"b":"<id>"` no payload RSC; conferir numa rota
+renderizada na hora (ex.: `/noticias?pagina=9`), porque página cacheada carrega o
+buildId de quando foi renderizada.
 
 ## Workflows
 
