@@ -103,6 +103,16 @@ Headers vão todos pelo `headers()` do `next.config.ts` — CSP, HSTS (2 anos, p
 - `postcss` e `sharp` aparecem no `pnpm audit` via Next: são build-time, não rodam no
   Worker. Só somem quando o Next atualizar as transitivas.
 
+## Armadilha: `loading.tsx` e 404
+
+Rota com parâmetro dinâmico que precisa devolver **404 não pode ter `loading.tsx`**.
+Ele cria um Suspense implícito no segmento; com PPR o shell sai imediatamente com
+status 200 e o `notFound()` acontece depois, no streaming, quando os headers já foram
+enviados. O sintoma é *soft 404*: página de "não encontrada" servida com HTTP 200.
+
+Foi o que aconteceu em `/noticias/[slug]` até 31/07/2026. `/cantos-da-torcida/[slug]`
+sempre acertou porque nunca teve `loading.tsx`.
+
 ## Cota do KV (plano free)
 
 O cache incremental vive no KV, que no plano gratuito dá **1000 escritas/dia** —
