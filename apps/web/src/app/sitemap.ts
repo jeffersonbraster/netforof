@@ -17,7 +17,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const lastNews = latestArticle?.scrapedAt ?? new Date();
 
   const staticPages: MetadataRoute.Sitemap = [
-    { url: `${SITE_URL}/`, lastModified: lastNews, changeFrequency: "hourly", priority: 1 },
+    // Sem barra final: é a forma que o `alternates.canonical` da home gera. Se as
+    // duas divergirem, o Search Console enxerga URL diferente da canônica.
+    { url: SITE_URL, lastModified: lastNews, changeFrequency: "hourly", priority: 1 },
     {
       url: `${SITE_URL}/noticias`,
       lastModified: lastNews,

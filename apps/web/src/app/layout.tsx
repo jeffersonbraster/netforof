@@ -6,7 +6,7 @@ import Script from "next/script";
 import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
 import { ADSENSE_CLIENT } from "@/lib/ads";
-import { JsonLd, SITE_NAME, SITE_URL, webSiteJsonLd } from "@/lib/seo";
+import { GOOGLE_SITE_VERIFICATION, JsonLd, SITE_NAME, SITE_URL, webSiteJsonLd } from "@/lib/seo";
 
 import "./globals.css";
 
@@ -31,6 +31,7 @@ export const metadata: Metadata = {
   description:
     "Portal agregador de notícias do Fortaleza Esporte Clube: últimas notícias, agenda de jogos, classificação, cantos da torcida e vídeos",
   manifest: "/manifest.json",
+  ...(GOOGLE_SITE_VERIFICATION && { verification: { google: GOOGLE_SITE_VERIFICATION } }),
   alternates: {
     types: { "application/rss+xml": "/noticias/rss" },
   },

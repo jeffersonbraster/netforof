@@ -75,7 +75,14 @@ Configurar em _Settings → Secrets and variables → Actions_:
       Managed Challenge (`403` + `cf-mitigated: challenge` + "Just a moment...") ao IP do
       runner do Actions e quebrava o webhook de revalidação. Não aceita exceção por
       regra de WAF — só desligando. Se o sintoma voltar, é o primeiro lugar a olhar
-- [ ] [Google Search Console](https://search.google.com/search-console): verificar domínio e enviar `sitemap.xml`
+- [ ] [Google Search Console](https://search.google.com/search-console). Duas opções:
+      **(a) propriedade "domínio"** (recomendada — cobre apex, www e http/https de uma vez):
+      verifica por registro **TXT no DNS** da Cloudflare, não precisa de código nosso;
+      **(b) propriedade "prefixo de URL"**: copiar o código da meta tag e criar a
+      **variable** `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` em _Settings → Secrets and
+      variables → Actions → Variables_ (é público, não é secret).
+      Depois enviar `sitemap.xml`. **Não enviar `news-sitemap.xml`**: no Modo A as páginas
+      de matéria são `noindex`, então ele só faz sentido no Modo B
 - [ ] [Google News Publisher Center](https://publishercenter.google.com): cadastrar o portal + feed RSS (`/noticias/rss`)
 - [x] Analytics: **Cloudflare Web Analytics** ativo em instalação **automática** — a borda
       injeta o beacon, sem código nosso e sem site token (por isso não há token no
