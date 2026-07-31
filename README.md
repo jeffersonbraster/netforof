@@ -77,11 +77,11 @@ Configurar em _Settings → Secrets and variables → Actions_:
       regra de WAF — só desligando. Se o sintoma voltar, é o primeiro lugar a olhar
 - [ ] [Google Search Console](https://search.google.com/search-console): verificar domínio e enviar `sitemap.xml`
 - [ ] [Google News Publisher Center](https://publishercenter.google.com): cadastrar o portal + feed RSS (`/noticias/rss`)
-- [ ] Analytics: **Cloudflare Web Analytics** (gratuito, sem cookies). O código já está
-      pronto — falta só o token: _dashboard → Analytics & Logs → Web Analytics → Add a site_
-      (`netfor.com.br`), copiar o token e criar a **variable** (não secret, é público)
-      `NEXT_PUBLIC_CF_BEACON_TOKEN` em _Settings → Secrets and variables → Actions → Variables_.
-      A CSP já libera `static.cloudflareinsights.com` e `cloudflareinsights.com`
+- [x] Analytics: **Cloudflare Web Analytics** ativo em instalação **automática** — a borda
+      injeta o beacon, sem código nosso e sem site token (por isso não há token no
+      dashboard). **Não instalar manualmente**: daria contagem dobrada. A CSP precisa
+      liberar `static.cloudflareinsights.com` e `cloudflareinsights.com`, senão a medição
+      morre em silêncio
 - [ ] [Google AdSense](https://adsense.google.com): submeter o site; após aprovação, criar 2 unidades
       (leaderboard e retângulo 336x280) e preencher `NEXT_PUBLIC_ADSENSE_*` nos secrets/env de build
 - [ ] Patrocínio: substituir o placeholder de `sponsor-card.tsx` pelo banner do patrocinador
@@ -104,6 +104,10 @@ Headers vão todos pelo `headers()` do `next.config.ts` — CSP, HSTS (2 anos, p
   vive no código, sobe no deploy e não gasta a única regra de WAF do plano free.
   O contador da Cloudflare é **aproximado** — sob concorrência deixa a rajada passar do
   teto antes de barrar. Contém abuso sustentado, não é corte exato.
+- **Script de terceiro exige mexer na CSP.** O beacon do Web Analytics já está liberado;
+  o AdSense ainda não. Ao ligar qualquer um, conferir no navegador se não há bloqueio —
+  a falha é silenciosa. E cuidado ao testar: a Cloudflare só injeta o beacon para
+  requisição com User-Agent de navegador, então `curl` cru sempre parece "sem beacon".
 - `postcss` e `sharp` aparecem no `pnpm audit` via Next: são build-time, não rodam no
   Worker. Só somem quando o Next atualizar as transitivas.
 

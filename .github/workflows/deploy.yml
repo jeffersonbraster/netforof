@@ -36,7 +36,6 @@ jobs:
           REVALIDATE_SECRET: ${{ secrets.REVALIDATE_SECRET }}
           # Públicas (aparecem no HTML), então vão como `vars`, não `secrets`.
           # Sem isto, preencher a env no .env local não tem efeito no deploy.
-          NEXT_PUBLIC_CF_BEACON_TOKEN: ${{ vars.NEXT_PUBLIC_CF_BEACON_TOKEN }}
           NEXT_PUBLIC_ADSENSE_CLIENT: ${{ vars.NEXT_PUBLIC_ADSENSE_CLIENT }}
           NEXT_PUBLIC_ADSENSE_SLOT_LEADERBOARD: ${{ vars.NEXT_PUBLIC_ADSENSE_SLOT_LEADERBOARD }}
           NEXT_PUBLIC_ADSENSE_SLOT_RECTANGLE: ${{ vars.NEXT_PUBLIC_ADSENSE_SLOT_RECTANGLE }}

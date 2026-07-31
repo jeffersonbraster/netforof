@@ -17,10 +17,17 @@ config({ path: "../../.env" });
  *
  * Ao ativar o AdSense, liberar aqui os domínios do Google (script/frame/img).
  */
-// Cloudflare Web Analytics: o beacon vem de static.cloudflareinsights.com e
-// reporta para cloudflareinsights.com. Vale tanto para a instalação manual
-// (Script no layout) quanto para a automática injetada na borda — sem estes dois
-// domínios liberados, a CSP derruba a medição em silêncio.
+// Cloudflare Web Analytics roda em instalação AUTOMÁTICA: a borda injeta o
+// beacon no HTML, sem nenhum código nosso e sem site token (por isso o token não
+// aparece no dashboard). Não instalar manualmente — daria contagem dobrada.
+//
+// Estes dois domínios são obrigatórios: o script vem de
+// static.cloudflareinsights.com e reporta para cloudflareinsights.com. Sem eles
+// a CSP derruba a medição em silêncio — o dashboard segue "ativo" e para de
+// receber dado. Foi o que aconteceu entre subir a CSP e liberar os domínios.
+//
+// A injeção só ocorre para requisição com cara de navegador: `curl` sem
+// User-Agent de browser NÃO recebe o beacon. Testar com UA real.
 const CF_ANALYTICS_SCRIPT = "https://static.cloudflareinsights.com";
 const CF_ANALYTICS_BEACON = "https://cloudflareinsights.com";
 
