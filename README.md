@@ -38,7 +38,8 @@ pnpm build && pnpm lint && pnpm typecheck
    npx wrangler secret put DATABASE_URL
    npx wrangler secret put REVALIDATE_SECRET
    ```
-4. Deploy manual: `pnpm --filter @netfor/web deploy`
+4. Deploy manual: `pnpm --filter @netfor/web run deploy`
+   (o `run` é obrigatório — sem ele o pnpm executa o próprio comando `deploy`)
    Preview local: `pnpm --filter @netfor/web preview`
 
 ## Secrets do GitHub Actions
