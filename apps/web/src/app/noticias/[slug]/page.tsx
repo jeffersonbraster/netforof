@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
 import { cacheLife, cacheTag } from "next/cache";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { CompactCard } from "@/components/news/news-card";
 import { ViewTracker } from "@/components/news/view-tracker";
 import { Badge } from "@/components/ui/badge";
+import { RemoteImage } from "@/components/ui/remote-image";
 import { SectionTitle } from "@/components/ui/section-title";
 import { AdSlot } from "@/components/widgets/ad-slot";
 import { formatLongDate, formatShortDateTime } from "@/lib/format";
+import { FALLBACK_IMAGE } from "@/lib/images";
 import { breadcrumbJsonLd, JsonLd, SITE_URL } from "@/lib/seo";
 import { getArticleBySlug } from "@/modules/news/queries";
 
@@ -49,7 +50,7 @@ export default async function ArticlePage({ params }: { params: Params }) {
     "@type": "NewsArticle",
     headline: article.title,
     description: article.excerpt,
-    image: article.imageUrl ? [article.imageUrl] : undefined,
+    image: [article.imageUrl ?? `${SITE_URL}${FALLBACK_IMAGE}`],
     datePublished: article.publishedAt.toISOString(),
     inLanguage: "pt-BR",
     url: `${SITE_URL}/noticias/${article.slug}`,
@@ -84,18 +85,14 @@ export default async function ArticlePage({ params }: { params: Params }) {
         {formatShortDateTime(article.publishedAt)}
       </p>
 
-      {article.imageUrl && (
-        <div className="relative mt-6 aspect-video overflow-hidden rounded-xl border border-line">
-          <Image
-            src={article.imageUrl}
-            alt=""
-            fill
-            priority
-            sizes="(max-width: 768px) 100vw, 720px"
-            className="object-cover"
-          />
-        </div>
-      )}
+      <div className="relative mt-6 aspect-video overflow-hidden rounded-xl border border-line">
+        <RemoteImage
+          src={article.imageUrl}
+          priority
+          sizes="(max-width: 768px) 100vw, 720px"
+          className="object-cover"
+        />
+      </div>
 
       <p className="mt-6 text-lg leading-relaxed">{article.excerpt}</p>
 

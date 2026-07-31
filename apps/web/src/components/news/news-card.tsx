@@ -1,7 +1,7 @@
-import Image from "next/image";
 import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
+import { RemoteImage } from "@/components/ui/remote-image";
 import { formatShortDateTime } from "@/lib/format";
 import type { ArticleCard } from "@/modules/news/types";
 
@@ -14,23 +14,14 @@ function CardImage({
   sizes: string;
   priority?: boolean;
 }) {
-  if (article.imageUrl) {
-    return (
-      <Image
-        src={article.imageUrl}
-        alt=""
-        fill
-        sizes={sizes}
-        priority={priority}
-        quality={priority ? 60 : 75}
-        className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-      />
-    );
-  }
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-secondary/40 via-surface-2 to-primary/25">
-      <Image src="/nf.svg" alt="" width={56} height={56} className="opacity-30" />
-    </div>
+    <RemoteImage
+      src={article.imageUrl}
+      sizes={sizes}
+      priority={priority}
+      quality={priority ? 60 : 75}
+      className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+    />
   );
 }
 
