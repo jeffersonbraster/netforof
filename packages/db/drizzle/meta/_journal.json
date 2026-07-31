@@ -8,6 +8,13 @@
       "when": 1785365876203,
       "tag": "0000_daily_clea",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1785535065392,
+      "tag": "0001_tan_ricochet",
+      "breakpoints": true
     }
   ]
 }

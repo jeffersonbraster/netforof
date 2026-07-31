@@ -11,7 +11,19 @@ import {
   timestamp,
 } from "drizzle-orm/pg-core";
 
-export const articleStatusEnum = pgEnum("article_status", ["published", "hidden"]);
+/**
+ * Ciclo de vida da matéria no Modo B:
+ *   draft     — coletada, ainda sem texto próprio
+ *   review    — texto próprio gerado, aguardando aprovação humana
+ *   published — no ar e indexável
+ *   hidden    — fora do ar (reprovada ou removida a pedido da fonte)
+ */
+export const articleStatusEnum = pgEnum("article_status", [
+  "draft",
+  "review",
+  "published",
+  "hidden",
+]);
 export const matchStatusEnum = pgEnum("match_status", ["scheduled", "live", "finished"]);
 export const chantCategoryEnum = pgEnum("chant_category", ["hino", "canto"]);
 
@@ -34,7 +46,17 @@ export const articles = pgTable(
     title: text("title").notNull(),
     slug: text("slug").notNull().unique(),
     excerpt: text("excerpt").notNull(),
+    /**
+     * Texto PRÓPRIO da matéria (Modo B), em parágrafos separados por linha em
+     * branco. Nulo enquanto a reescrita não rodou — e é este campo que decide se
+     * a página pode ser indexada: sem texto próprio, não vai para o índice.
+     *
+     * O texto ORIGINAL do veículo nunca é gravado: ele é buscado, usado como
+     * insumo da reescrita e descartado na memória.
+     */
     content: text("content"),
+    rewrittenAt: timestamp("rewritten_at", { withTimezone: true }),
+    rewriteModel: text("rewrite_model"),
     originalUrl: text("original_url").notNull().unique(),
     imageUrl: text("image_url"),
     category: text("category"),

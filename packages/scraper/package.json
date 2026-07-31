@@ -6,7 +6,8 @@
   "scripts": {
     "start": "tsx src/index.ts",
     "matches": "tsx src/matches/index.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "rewrite": "tsx src/rewrite-run.ts"
   },
   "dependencies": {
     "@netfor/db": "workspace:*",
