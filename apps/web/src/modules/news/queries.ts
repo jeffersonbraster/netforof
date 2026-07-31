@@ -130,7 +130,38 @@ export async function getNewsFilters(): Promise<NewsFilters> {
   };
 }
 
+/**
+ * Slugs publicados, numa única entrada de cache. Serve de porteiro para
+ * `getArticleBySlug`: o argumento dela entra na chave do cache, então cada slug
+ * inexistente que um crawler inventa viraria uma entrada nova no KV — espaço de
+ * chave infinito, com o agravante de que o `null` do resultado também é
+ * cacheado. Conferindo aqui primeiro, URL inválida vira 404 sem escrever nada.
+ */
+export async function getPublishedSlugs(): Promise<string[]> {
+  "use cache";
+  cacheTag("articles");
+  cacheLife("hours");
+
+  const rows = await db
+    .select({ slug: articles.slug })
+    .from(articles)
+    .where(eq(articles.status, "published"));
+
+  return rows.map((row) => row.slug);
+}
+
+/**
+ * Porteiro de `getArticleDetail`: confere o slug contra a lista publicada antes
+ * de deixar o argumento virar chave de cache. Sem isso, `/noticias/qualquer-lixo`
+ * cria entrada nova no KV a cada URL inventada.
+ */
 export async function getArticleBySlug(slug: string): Promise<ArticleDetail | null> {
+  const publicados = await getPublishedSlugs();
+  if (!publicados.includes(slug)) return null;
+  return getArticleDetail(slug);
+}
+
+async function getArticleDetail(slug: string): Promise<ArticleDetail | null> {
   "use cache";
   cacheTag("articles", `article-${slug}`);
   cacheLife("hours");

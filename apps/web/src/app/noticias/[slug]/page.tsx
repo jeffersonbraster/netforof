@@ -12,7 +12,7 @@ import { AdSlot } from "@/components/widgets/ad-slot";
 import { formatLongDate, formatShortDateTime } from "@/lib/format";
 import { FALLBACK_IMAGE } from "@/lib/images";
 import { breadcrumbJsonLd, JsonLd, SITE_URL } from "@/lib/seo";
-import { getArticleBySlug } from "@/modules/news/queries";
+import { getArticleBySlug, getPublishedSlugs } from "@/modules/news/queries";
 
 type Params = Promise<{ slug: string }>;
 
@@ -22,10 +22,9 @@ export async function generateStaticParams() {
   return items.map((article) => ({ slug: article.slug }));
 }
 
+// Sem "use cache" próprio: os dados já vêm de funções cacheadas. Um escopo
+// cacheado aqui só criaria mais uma entrada no KV por slug, sem poupar consulta.
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
-  "use cache";
-  cacheTag("articles");
-  cacheLife("hours");
   const { slug } = await params;
   const article = await getArticleBySlug(slug);
   if (!article) return { title: "Notícia não encontrada" };
@@ -38,10 +37,21 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 }
 
 export default async function ArticlePage({ params }: { params: Params }) {
+  const { slug } = await params;
+  // Valida ANTES de entrar em escopo cacheado. Com "use cache" + PPR o shell já
+  // sai com HTTP 200 e o notFound() só acontece durante o streaming: o resultado
+  // era um soft 404 (200 com corpo de "não encontrada"). Aqui o 404 é de
+  // verdade, e o slug inválido nunca chega a virar chave de cache.
+  const publicados = await getPublishedSlugs();
+  if (!publicados.includes(slug)) notFound();
+
+  return <ArticleBody slug={slug} />;
+}
+
+async function ArticleBody({ slug }: { slug: string }) {
   "use cache";
   cacheTag("articles");
   cacheLife("hours");
-  const { slug } = await params;
   const article = await getArticleBySlug(slug);
   if (!article) notFound();
 

@@ -27,16 +27,26 @@ function buildQuery(params: Record<string, string | null>): string {
 
 type SearchParams = Promise<{ pagina?: string; categoria?: string; fonte?: string }>;
 
+/**
+ * Teto de paginação. `page` entra na chave de cache do `getArticlesPage`, então
+ * sem limite um crawler pedindo `?pagina=99999` grava uma entrada no KV por
+ * número inventado. 50 páginas × 12 = 600 matérias, folga larga sobre o acervo.
+ */
+const MAX_PAGINA = 50;
+
 async function NewsList({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams;
-  const page = Math.max(1, Number.parseInt(params.pagina ?? "1", 10) || 1);
-  const category = params.categoria ?? null;
-  const sourceSlug = params.fonte ?? null;
+  const filters = await getNewsFilters();
 
-  const [{ items, total, pageSize }, filters] = await Promise.all([
-    getArticlesPage({ page, category, sourceSlug }),
-    getNewsFilters(),
-  ]);
+  // Filtro desconhecido colapsa para "sem filtro" em vez de virar chave nova.
+  const category = filters.categories.find((c) => c === params.categoria) ?? null;
+  const sourceSlug = filters.sources.find((s) => s.slug === params.fonte)?.slug ?? null;
+  const page = Math.min(
+    MAX_PAGINA,
+    Math.max(1, Number.parseInt(params.pagina ?? "1", 10) || 1),
+  );
+
+  const { items, total, pageSize } = await getArticlesPage({ page, category, sourceSlug });
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (

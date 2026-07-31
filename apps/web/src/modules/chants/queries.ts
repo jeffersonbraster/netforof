@@ -1,4 +1,4 @@
-import { asc, eq } from "@netfor/db";
+import { asc } from "@netfor/db";
 import { cacheLife, cacheTag } from "next/cache";
 
 import { chants, type Chant } from "@netfor/db";
@@ -13,11 +13,12 @@ export async function getChants(): Promise<Chant[]> {
   return db.select().from(chants).orderBy(asc(chants.order), asc(chants.title));
 }
 
+/**
+ * Busca na lista já cacheada em vez de uma query por slug. São poucos cantos, e
+ * assim o slug da URL não vira chave de cache: antes, cada `/cantos-da-torcida/
+ * <lixo>` gravava uma entrada nova no KV (inclusive o `null`).
+ */
 export async function getChantBySlug(slug: string): Promise<Chant | null> {
-  "use cache";
-  cacheTag("chants", `chant-${slug}`);
-  cacheLife("days");
-
-  const [row] = await db.select().from(chants).where(eq(chants.slug, slug)).limit(1);
-  return row ?? null;
+  const todos = await getChants();
+  return todos.find((chant) => chant.slug === slug) ?? null;
 }
