@@ -77,7 +77,11 @@ Configurar em _Settings → Secrets and variables → Actions_:
       regra de WAF — só desligando. Se o sintoma voltar, é o primeiro lugar a olhar
 - [ ] [Google Search Console](https://search.google.com/search-console): verificar domínio e enviar `sitemap.xml`
 - [ ] [Google News Publisher Center](https://publishercenter.google.com): cadastrar o portal + feed RSS (`/noticias/rss`)
-- [ ] Analytics: ativar **Cloudflare Web Analytics** (gratuito, sem cookies) no dashboard do domínio
+- [ ] Analytics: **Cloudflare Web Analytics** (gratuito, sem cookies). O código já está
+      pronto — falta só o token: _dashboard → Analytics & Logs → Web Analytics → Add a site_
+      (`netfor.com.br`), copiar o token e criar a **variable** (não secret, é público)
+      `NEXT_PUBLIC_CF_BEACON_TOKEN` em _Settings → Secrets and variables → Actions → Variables_.
+      A CSP já libera `static.cloudflareinsights.com` e `cloudflareinsights.com`
 - [ ] [Google AdSense](https://adsense.google.com): submeter o site; após aprovação, criar 2 unidades
       (leaderboard e retângulo 336x280) e preencher `NEXT_PUBLIC_ADSENSE_*` nos secrets/env de build
 - [ ] Patrocínio: substituir o placeholder de `sponsor-card.tsx` pelo banner do patrocinador

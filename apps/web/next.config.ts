@@ -17,14 +17,21 @@ config({ path: "../../.env" });
  *
  * Ao ativar o AdSense, liberar aqui os domínios do Google (script/frame/img).
  */
+// Cloudflare Web Analytics: o beacon vem de static.cloudflareinsights.com e
+// reporta para cloudflareinsights.com. Vale tanto para a instalação manual
+// (Script no layout) quanto para a automática injetada na borda — sem estes dois
+// domínios liberados, a CSP derruba a medição em silêncio.
+const CF_ANALYTICS_SCRIPT = "https://static.cloudflareinsights.com";
+const CF_ANALYTICS_BEACON = "https://cloudflareinsights.com";
+
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
+  `script-src 'self' 'unsafe-inline' ${CF_ANALYTICS_SCRIPT}`,
   "style-src 'self' 'unsafe-inline'",
   // Imagens vêm dos portais agregados; o otimizador do Next serve como data:/blob:
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
-  "connect-src 'self'",
+  `connect-src 'self' ${CF_ANALYTICS_SCRIPT} ${CF_ANALYTICS_BEACON}`,
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",

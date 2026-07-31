@@ -6,6 +6,7 @@ import Script from "next/script";
 import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
 import { ADSENSE_CLIENT } from "@/lib/ads";
+import { CF_BEACON_TOKEN } from "@/lib/analytics";
 import { JsonLd, SITE_NAME, SITE_URL, webSiteJsonLd } from "@/lib/seo";
 
 import "./globals.css";
@@ -76,6 +77,16 @@ export default function RootLayout({
           {children}
         </main>
         <Footer />
+        {/* Web Analytics: afterInteractive e não bloqueante — a medição nunca
+            pode custar LCP. Beacon oficial da Cloudflare, sem cookie. */}
+        {CF_BEACON_TOKEN && (
+          <Script
+            id="cf-web-analytics"
+            src="https://static.cloudflareinsights.com/beacon.min.js"
+            strategy="afterInteractive"
+            data-cf-beacon={JSON.stringify({ token: CF_BEACON_TOKEN })}
+          />
+        )}
         {/* Anúncios carregam lazy (pós-load) — não competem com o LCP */}
         {ADSENSE_CLIENT && (
           <Script
