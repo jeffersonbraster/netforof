@@ -70,7 +70,11 @@ Configurar em _Settings → Secrets and variables → Actions_:
 - [x] Email Routing: `contato@netfor.com.br` → Gmail do dono. Atenção: o registro.br
       cria um *null MX* (`MX .`) e `SPF -all` por padrão, que bloqueiam o endereço
       publicado no site; ambos precisam ser removidos antes de habilitar
-- [ ] Atualizar secret `REVALIDATE_URL` para `https://netfor.com.br/api/revalidate`
+- [x] Atualizar secret `REVALIDATE_URL` para `https://netfor.com.br/api/revalidate`
+- [ ] **Liberar o runner do Actions na Cloudflare**: a borda devolve 403 para o POST
+      em `/api/revalidate` vindo do GitHub (a rota em si só devolve 401 ou 200).
+      Conferir em _Security → Events_ qual serviço barrou — se for **Bot Fight Mode**,
+      só desligando (ele não aceita exceção por regra de WAF)
 - [ ] [Google Search Console](https://search.google.com/search-console): verificar domínio e enviar `sitemap.xml`
 - [ ] [Google News Publisher Center](https://publishercenter.google.com): cadastrar o portal + feed RSS (`/noticias/rss`)
 - [ ] Analytics: ativar **Cloudflare Web Analytics** (gratuito, sem cookies) no dashboard do domínio
