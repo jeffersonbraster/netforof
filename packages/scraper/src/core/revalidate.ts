@@ -28,18 +28,16 @@ function detalharResposta(response: Response, corpo: string): string {
   return `${pistas.join(" ")}${trecho ? ` — corpo: ${trecho}` : ""}`;
 }
 
-export async function notifyRevalidate(tags: string[]): Promise<boolean> {
-  const url = process.env.REVALIDATE_URL;
-  const secret = process.env.REVALIDATE_SECRET;
+/** Managed Challenge da Cloudflare: página "Just a moment...", que fetch não resolve. */
+function ehDesafioCloudflare(response: Response): boolean {
+  return response.status === 403 && response.headers.get("cf-mitigated") === "challenge";
+}
 
-  if (!url || !secret) {
-    console.error(
-      "✗ REVALIDATE_URL/REVALIDATE_SECRET não configurados — o site NÃO será atualizado.",
-    );
-    return false;
-  }
+type Resultado = { ok: true } | { ok: false; erro: string; desafiado: boolean };
 
+async function tentarOrigem(url: string, secret: string, tags: string[]): Promise<Resultado> {
   let ultimoErro = "";
+  let desafiado = false;
 
   for (let tentativa = 1; tentativa <= TENTATIVAS; tentativa++) {
     try {
@@ -55,15 +53,13 @@ export async function notifyRevalidate(tags: string[]): Promise<boolean> {
         signal: AbortSignal.timeout(15_000),
       });
 
-      if (response.ok) {
-        console.log(`↻ Cache revalidado (${tags.join(", ")}).`);
-        return true;
-      }
+      if (response.ok) return { ok: true };
 
+      desafiado = ehDesafioCloudflare(response);
       ultimoErro = detalharResposta(response, await response.text().catch(() => ""));
 
-      // 401 é segredo errado: repetir não resolve.
-      if (response.status === 401) break;
+      // Segredo errado ou desafio da borda não melhoram com insistência.
+      if (response.status === 401 || desafiado) break;
     } catch (error) {
       ultimoErro = `inacessível: ${error instanceof Error ? error.message : String(error)}`;
     }
@@ -73,6 +69,41 @@ export async function notifyRevalidate(tags: string[]): Promise<boolean> {
     }
   }
 
-  console.error(`✗ Webhook de revalidação falhou em ${url} — ${ultimoErro}`);
+  return { ok: false, erro: ultimoErro, desafiado };
+}
+
+export async function notifyRevalidate(tags: string[]): Promise<boolean> {
+  const url = process.env.REVALIDATE_URL;
+  const secret = process.env.REVALIDATE_SECRET;
+
+  if (!url || !secret) {
+    console.error(
+      "✗ REVALIDATE_URL/REVALIDATE_SECRET não configurados — o site NÃO será atualizado.",
+    );
+    return false;
+  }
+
+  const principal = await tentarOrigem(url, secret, tags);
+  if (principal.ok) {
+    console.log(`↻ Cache revalidado (${tags.join(", ")}).`);
+    return true;
+  }
+
+  // A zona netfor.com.br desafia o IP do runner do Actions. O hostname
+  // workers.dev do próprio Worker não passa pelas regras da zona, então serve de
+  // rota de escape. Só é usado quando a borda de fato desafiou — quando o Bot
+  // Fight Mode for desligado, este caminho nunca mais executa.
+  const escape = process.env.REVALIDATE_FALLBACK_URL;
+  if (principal.desafiado && escape) {
+    console.warn(`⚠ Origem principal desafiada pela Cloudflare — tentando ${escape}`);
+    const alternativa = await tentarOrigem(escape, secret, tags);
+    if (alternativa.ok) {
+      console.log(`↻ Cache revalidado via rota de escape (${tags.join(", ")}).`);
+      return true;
+    }
+    console.error(`✗ Rota de escape também falhou — ${alternativa.erro}`);
+  }
+
+  console.error(`✗ Webhook de revalidação falhou em ${url} — ${principal.erro}`);
   return false;
 }
