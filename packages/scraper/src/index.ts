@@ -5,6 +5,7 @@ config({ path: "../../.env" });
 import { createDb } from "@netfor/db";
 
 import { runSource } from "./core/pipeline";
+import { notifyRevalidate } from "./core/revalidate";
 import { diarioDoNordeste } from "./sources/diario-do-nordeste";
 import { espn } from "./sources/espn";
 import { fortaleza1918 } from "./sources/fortaleza1918";
@@ -21,25 +22,6 @@ const allSources: NewsSource[] = [
   oPovo,
   espn,
 ];
-
-async function notifyRevalidate(): Promise<void> {
-  const url = process.env.REVALIDATE_URL;
-  const secret = process.env.REVALIDATE_SECRET;
-  if (!url || !secret) {
-    console.log("↷ Revalidação pulada (REVALIDATE_URL/REVALIDATE_SECRET não configurados).");
-    return;
-  }
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "content-type": "application/json", "x-revalidate-secret": secret },
-      body: JSON.stringify({ tags: ["articles"] }),
-    });
-    console.log(`↻ Webhook de revalidação: HTTP ${response.status}`);
-  } catch (error) {
-    console.error("✗ Falha no webhook de revalidação:", error);
-  }
-}
 
 async function main() {
   const startedAt = Date.now();
@@ -71,10 +53,10 @@ async function main() {
   );
 
   const totalInserted = summaries.reduce((acc, s) => acc + s.inserted, 0);
-  const hasErrors = summaries.some((s) => s.error);
+  let hasErrors = summaries.some((s) => s.error);
 
-  if (totalInserted > 0) {
-    await notifyRevalidate();
+  if (totalInserted > 0 && !(await notifyRevalidate(["articles"]))) {
+    hasErrors = true;
   }
 
   console.log(

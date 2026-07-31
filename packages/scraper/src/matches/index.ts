@@ -5,6 +5,7 @@ config({ path: "../../.env" });
 import { createDb, eq, matches, standings, type Db } from "@netfor/db";
 
 import { fetchJson } from "../core/http";
+import { notifyRevalidate } from "../core/revalidate";
 
 // API pública da ESPN — dados atuais e gratuitos (API-Football free só cobre 2022–2024).
 const TEAM_ID = 6272; // Fortaleza EC
@@ -147,27 +148,12 @@ async function syncStandings(db: Db): Promise<number> {
   return rows.length;
 }
 
-async function notifyRevalidate(): Promise<void> {
-  const url = process.env.REVALIDATE_URL;
-  const secret = process.env.REVALIDATE_SECRET;
-  if (!url || !secret) return;
-  try {
-    await fetch(url, {
-      method: "POST",
-      headers: { "content-type": "application/json", "x-revalidate-secret": secret },
-      body: JSON.stringify({ tags: ["matches", "standings"] }),
-    });
-  } catch (error) {
-    console.error("✗ Falha no webhook de revalidação:", error);
-  }
-}
-
 async function main() {
   const startedAt = Date.now();
   const db = createDb();
 
   const [matchCount, standingCount] = await Promise.all([syncMatches(db), syncStandings(db)]);
-  await notifyRevalidate();
+  if (!(await notifyRevalidate(["matches", "standings"]))) process.exitCode = 1;
 
   console.log(
     `Sync de jogos concluído em ${((Date.now() - startedAt) / 1000).toFixed(1)}s — ${matchCount} jogos, ${standingCount} posições na tabela.`,

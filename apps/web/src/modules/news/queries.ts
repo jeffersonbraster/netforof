@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gte, inArray, isNotNull, ne, sql } from "@netfor/db";
+import { and, count, desc, eq, gte, isNotNull, ne, sql } from "@netfor/db";
 import { cacheLife, cacheTag } from "next/cache";
 
 import { articles, articleViews, sources } from "@netfor/db";
@@ -163,7 +163,9 @@ export async function getArticleBySlug(slug: string): Promise<ArticleDetail | nu
     .orderBy(desc(articles.publishedAt))
     .limit(5);
 
-  const { contentHash: _hash, ...article } = row;
+  // contentHash é detalhe interno de deduplicação — não vaza para a UI.
+  const { contentHash, ...article } = row;
+  void contentHash;
   return { ...article, related };
 }
 

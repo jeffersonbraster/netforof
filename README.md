@@ -49,9 +49,18 @@ Configurar em _Settings → Secrets and variables → Actions_:
 | ----------------------- | ------------------------ | ---------------------------------------------------- |
 | `DATABASE_URL`          | scraper, matches, deploy | Connection string do Neon                            |
 | `REVALIDATE_SECRET`     | scraper, matches, deploy | Mesmo valor do Worker (`openssl rand -hex 32`)       |
-| `REVALIDATE_URL`        | scraper, matches         | `https://netfor.club/api/revalidate`                 |
+| `REVALIDATE_URL`        | scraper, matches         | `/api/revalidate` da origem **ativa** (ver aviso)     |
 | `CLOUDFLARE_API_TOKEN`  | deploy                   | Token com permissão _Workers Scripts:Edit_ (+ KV/D1) |
 | `CLOUDFLARE_ACCOUNT_ID` | deploy                   | ID da conta (dashboard → Workers)                    |
+
+> ⚠️ **`REVALIDATE_URL` precisa apontar para uma origem que responde.** O scraper grava
+> no Neon normalmente, mas se a revalidação falhar o Worker continua servindo o cache
+> antigo e o site "congela" — foi o que aconteceu enquanto o secret apontava para
+> `netfor.club` (ainda não registrado). Enquanto o domínio não estiver no ar, use
+> `https://netfor.jejesavewords.workers.dev/api/revalidate`; troque para
+> `https://netfor.club/api/revalidate` no mesmo momento em que o Custom Domain subir.
+> Desde então uma falha de revalidação derruba a run do Actions (exit 1), em vez de
+> passar despercebida.
 
 ## Checklist de lançamento
 
