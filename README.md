@@ -83,7 +83,13 @@ Configurar em _Settings → Secrets and variables → Actions_:
       variables → Actions → Variables_ (é público, não é secret).
       Depois enviar `sitemap.xml`. **Não enviar `news-sitemap.xml`**: no Modo A as páginas
       de matéria são `noindex`, então ele só faz sentido no Modo B
-- [ ] [Google News Publisher Center](https://publishercenter.google.com): cadastrar o portal + feed RSS (`/noticias/rss`)
+- [ ] [Google News Publisher Center](https://publishercenter.google.com) — **bloqueado pelo
+      Modo A, não por falta de configuração.** As páginas de matéria são `noindex`, e o
+      Google News não veicula o que não pode indexar; a política também pede conteúdo
+      original, e o portal publica título + resumo + link para a fonte. O feed
+      (`/noticias/rss`) já está tecnicamente correto e pronto para o dia em que houver
+      conteúdo indexável. Submeter antes disso tende a virar reprovação registrada na
+      conta. Decisão de produto: ver "Modo A vs Modo B" abaixo
 - [x] Analytics: **Cloudflare Web Analytics** ativo em instalação **automática** — a borda
       injeta o beacon, sem código nosso e sem site token (por isso não há token no
       dashboard). **Não instalar manualmente**: daria contagem dobrada. A CSP precisa
@@ -117,6 +123,27 @@ Headers vão todos pelo `headers()` do `next.config.ts` — CSP, HSTS (2 anos, p
   requisição com User-Agent de navegador, então `curl` cru sempre parece "sem beacon".
 - `postcss` e `sharp` aparecem no `pnpm audit` via Next: são build-time, não rodam no
   Worker. Só somem quando o Next atualizar as transitivas.
+
+## Modo A vs Modo B (decisão de produto pendente)
+
+**Modo A (atual):** agregador puro — título, resumo próprio, imagem e link canônico para
+a fonte, com crédito visível. As páginas de matéria são `noindex` de propósito, para não
+competir com o veículo original nem ser punido por conteúdo duplicado.
+
+Consequências que já se manifestam:
+
+- **Google News: inviável.** Não há conteúdo indexável para veicular.
+- **AdSense: risco de reprovação.** O programa avalia "valor agregado"; site cujo conteúdo
+  é majoritariamente de terceiros costuma ser recusado por conteúdo pouco original.
+- O `news-sitemap.xml` existe mas não é anunciado no `robots.txt` (só faria sentido no Modo B).
+
+**Modo B:** texto próprio sobre a notícia, indexável. Destrava Google News e melhora muito
+a chance no AdSense — mas muda a postura jurídica do projeto (deixa de ser vitrine com
+crédito e passa a ser publicação), exige cuidado editorial com direito autoral e dá
+trabalho editorial recorrente.
+
+Não é ajuste técnico: é escolha do dono. Enquanto for Modo A, tratar Google News como
+fora de alcance e não como pendência de configuração.
 
 ## robots.txt: a Cloudflare injeta conteúdo próprio
 
