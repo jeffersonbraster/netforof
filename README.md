@@ -109,8 +109,13 @@ estourado em 31/07/2026. O que gasta, por ordem:
   antes do `wrangler deploy`, sem flag para pular. Deploy que falha depois disso já
   gastou os 69. Com a cota estourada nenhum deploy passa — para subir assim mesmo:
   `npx opennextjs-cloudflare build && OPEN_NEXT_DEPLOY=true npx wrangler deploy`.
-- **`cacheLife("hours")` em ~30 entradas ≈ 720 puts/dia** só de expiração natural.
-  É redundante com o `revalidateTag` do scraper — pendente de correção.
+- ~~`cacheLife("hours")` em ~30 entradas ≈ 720 puts/dia~~ — **corrigido**: passou para
+  `days` onde o `revalidateTag` cobre o frescor. Seguem em `hours` de propósito o
+  ticker, a agenda e a home (que embute o ticker), porque separam passado de futuro
+  por `now` e envelhecem sozinhos, sem depender do banco.
+- A tag `articles` só fica nas listas. Página de matéria carrega `article-<slug>` —
+  a matéria é imutável (`onConflictDoNothing`), então notícia nova não precisa
+  invalidar o acervo. Cuidado: tag de função aninhada alcança a entrada externa.
 - Builds antigos **nunca são limpos** (`incremental-cache/<buildId>/`). Deleção tem
   cota própria e funciona mesmo com escrita bloqueada.
 
