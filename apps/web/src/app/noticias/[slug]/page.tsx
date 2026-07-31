@@ -12,7 +12,7 @@ import { AdSlot } from "@/components/widgets/ad-slot";
 import { formatLongDate, formatShortDateTime } from "@/lib/format";
 import { FALLBACK_IMAGE } from "@/lib/images";
 import { breadcrumbJsonLd, JsonLd, SITE_URL } from "@/lib/seo";
-import { getArticleBySlug, getPublishedSlugs } from "@/modules/news/queries";
+import { getArticleBySlug, getArticleDetail, getPublishedSlugs } from "@/modules/news/queries";
 
 type Params = Promise<{ slug: string }>;
 
@@ -48,11 +48,14 @@ export default async function ArticlePage({ params }: { params: Params }) {
   return <ArticleBody slug={slug} />;
 }
 
+// Tag só do próprio slug: notícia nova não precisa invalidar página de matéria
+// antiga. E chama getArticleDetail direto porque o slug já foi validado acima —
+// passar pelo porteiro traria a tag `articles` junto e anularia o ganho.
 async function ArticleBody({ slug }: { slug: string }) {
   "use cache";
-  cacheTag("articles");
-  cacheLife("hours");
-  const article = await getArticleBySlug(slug);
+  cacheTag(`article-${slug}`);
+  cacheLife("days");
+  const article = await getArticleDetail(slug);
   if (!article) notFound();
 
   const newsArticleJsonLd = {

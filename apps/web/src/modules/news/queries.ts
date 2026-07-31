@@ -39,7 +39,7 @@ export async function getHomeArticles(): Promise<{
 }> {
   "use cache";
   cacheTag("articles");
-  cacheLife("hours");
+  cacheLife("days");
 
   const rows = await db
     .select({ ...cardColumns, contentHash: articles.contentHash })
@@ -77,7 +77,7 @@ export async function getArticlesPage({ page, category, sourceSlug }: ArticlesPa
 }> {
   "use cache";
   cacheTag("articles");
-  cacheLife("hours");
+  cacheLife("days");
 
   const pageSize = 12;
   const conditions = [eq(articles.status, "published")];
@@ -107,7 +107,7 @@ export async function getArticlesPage({ page, category, sourceSlug }: ArticlesPa
 export async function getNewsFilters(): Promise<NewsFilters> {
   "use cache";
   cacheTag("articles");
-  cacheLife("hours");
+  cacheLife("days");
 
   const [categoryRows, sourceRows] = await Promise.all([
     db
@@ -140,7 +140,7 @@ export async function getNewsFilters(): Promise<NewsFilters> {
 export async function getPublishedSlugs(): Promise<string[]> {
   "use cache";
   cacheTag("articles");
-  cacheLife("hours");
+  cacheLife("days");
 
   const rows = await db
     .select({ slug: articles.slug })
@@ -161,10 +161,21 @@ export async function getArticleBySlug(slug: string): Promise<ArticleDetail | nu
   return getArticleDetail(slug);
 }
 
-async function getArticleDetail(slug: string): Promise<ArticleDetail | null> {
+/**
+ * Só a tag do próprio slug — nada de `articles`. A matéria é imutável depois de
+ * inserida (o pipeline usa onConflictDoNothing), então incluí-la na tag de lista
+ * fazia cada notícia nova invalidar todas as páginas de matéria de uma vez: era
+ * o maior multiplicador de escrita no KV. O que envelhece aqui é só o bloco de
+ * cobertura relacionada, e para isso o próprio cacheLife basta.
+ *
+ * Já vem com o slug validado por `getArticleBySlug`. Chamar direto (sem passar
+ * pelo porteiro) é proposital em escopo cacheado: `getPublishedSlugs` carrega a
+ * tag `articles`, que vazaria para a entrada externa e desfaria tudo isto.
+ */
+export async function getArticleDetail(slug: string): Promise<ArticleDetail | null> {
   "use cache";
-  cacheTag("articles", `article-${slug}`);
-  cacheLife("hours");
+  cacheTag(`article-${slug}`);
+  cacheLife("days");
 
   const [row] = await db
     .select({
@@ -209,7 +220,7 @@ export interface MostReadItem {
 export async function getMostReadWeek(): Promise<MostReadItem[]> {
   "use cache";
   cacheTag("articles");
-  cacheLife("hours");
+  cacheLife("days");
 
   const since = new Date();
   since.setDate(since.getDate() - 7);

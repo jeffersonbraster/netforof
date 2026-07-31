@@ -23,7 +23,7 @@ function highlightsUrl(match: Match): string {
 export default async function VideosPage() {
   "use cache";
   cacheTag("matches");
-  cacheLife("hours");
+  cacheLife("days");
 
   const results = await getRecentResults(12);
 

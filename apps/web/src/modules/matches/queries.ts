@@ -3,6 +3,11 @@ import { cacheLife, cacheTag } from "next/cache";
 
 import { db } from "@/lib/db";
 
+/**
+ * Continua em "hours" de propósito: o corte passado/futuro usa `now`, então o
+ * resultado envelhece sozinho, sem depender de mudança no banco. Com "days" um
+ * jogo já encerrado seguiria anunciado como "próximo" por até um dia.
+ */
 export async function getTickerMatches(): Promise<Match[]> {
   "use cache";
   cacheTag("matches");
@@ -27,6 +32,7 @@ export async function getTickerMatches(): Promise<Match[]> {
   return [...lastFinished, ...upcoming];
 }
 
+/** Também depende de `now` para separar agenda de resultados — ver getTickerMatches. */
 export async function getAgenda(): Promise<{ upcoming: Match[]; results: Match[] }> {
   "use cache";
   cacheTag("matches");
@@ -49,7 +55,7 @@ export async function getAgenda(): Promise<{ upcoming: Match[]; results: Match[]
 export async function getRecentResults(limit: number): Promise<Match[]> {
   "use cache";
   cacheTag("matches");
-  cacheLife("hours");
+  cacheLife("days");
 
   return db
     .select()
@@ -62,7 +68,7 @@ export async function getRecentResults(limit: number): Promise<Match[]> {
 export async function getStandings(): Promise<Standing[]> {
   "use cache";
   cacheTag("standings");
-  cacheLife("hours");
+  cacheLife("days");
 
   return db.select().from(standings).orderBy(asc(standings.position));
 }

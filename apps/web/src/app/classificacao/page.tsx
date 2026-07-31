@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 export default async function ClassificacaoPage() {
   "use cache";
   cacheTag("standings");
-  cacheLife("hours");
+  cacheLife("days");
 
   const standings = await getStandings();
   const updatedAt = standings[0]?.updatedAt;
