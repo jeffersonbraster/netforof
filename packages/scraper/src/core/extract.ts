@@ -52,6 +52,12 @@ const SELETORES_CORPO = [
   ".entry-content",
   ".post-content",
   ".article-body",
+  // WordPress + Elementor (fortaleza1918): a classe real é
+  // `elementor-widget-theme-post-content`, então `.post-content` não casa. E o
+  // tema não usa <article> nem <main>, o que derrubava os dois últimos recursos.
+  ".elementor-widget-theme-post-content",
+  "[class*='post-content']",
+  "[class*='entry-content']",
   "article",
   "main",
 ];

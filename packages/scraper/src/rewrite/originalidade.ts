@@ -23,13 +23,38 @@ export const MAX_SEQUENCIA_LITERAL = 14;
 /** Proporção de 8-gramas idênticos tolerada. */
 export const MAX_RAZAO_8GRAMA = 0.18;
 
+/**
+ * Acima disto o texto virou transcrição: citação é permitida, colcha de retalhos
+ * de citações não é matéria própria. Fecha também a brecha de o modelo escapar
+ * da trava embrulhando tudo entre aspas.
+ */
+export const MAX_PROPORCAO_CITADA = 0.4;
+
 export interface Originalidade {
   maiorSequencia: number;
   razao8grama: number;
+  proporcaoCitada: number;
   aprovado: boolean;
   motivo: string | null;
   /** Trecho literal mais longo — vai para o log, para dar o que inspecionar. */
   amostra: string | null;
+}
+
+/**
+ * Declaração entre aspas pode ser idêntica ao original: é fato verificável, e
+ * citação curta com atribuição é justamente o que a lei protege. Medir a
+ * originalidade COM as aspas dentro reprova o texto pelo que ele tem de mais
+ * correto — aconteceu numa matéria real, barrada por 50 palavras que eram uma
+ * fala do procurador. A medição olha só a prosa que é nossa.
+ */
+function separarCitacoes(texto: string): { prosa: string; citado: number } {
+  const aspas = /[“"«][^”"»]{10,}[”"»]/g;
+  let citado = 0;
+  const prosa = texto.replace(aspas, (trecho) => {
+    citado += trecho.length;
+    return " ";
+  });
+  return { prosa, citado };
 }
 
 function tokenizar(texto: string): string[] {
@@ -49,11 +74,21 @@ function ngramas(tokens: string[], n: number): Set<string> {
 }
 
 export function medirOriginalidade(novo: string, original: string): Originalidade {
-  const a = tokenizar(novo);
+  const { prosa, citado } = separarCitacoes(novo);
+  const proporcaoCitada = novo.length > 0 ? citado / novo.length : 0;
+
+  const a = tokenizar(prosa);
   const b = tokenizar(original);
 
   if (a.length === 0 || b.length === 0) {
-    return { maiorSequencia: 0, razao8grama: 0, aprovado: false, motivo: "texto vazio", amostra: null };
+    return {
+      maiorSequencia: 0,
+      razao8grama: 0,
+      proporcaoCitada,
+      aprovado: false,
+      motivo: "texto vazio fora das aspas",
+      amostra: null,
+    };
   }
 
   // Programação dinâmica em uma linha: maior substring comum de palavras.
@@ -84,11 +119,20 @@ export function medirOriginalidade(novo: string, original: string): Originalidad
   const amostra = maior > 0 ? a.slice(Math.max(0, fimEmA - maior), fimEmA).join(" ") : null;
 
   let motivo: string | null = null;
-  if (maior > MAX_SEQUENCIA_LITERAL) {
+  if (proporcaoCitada > MAX_PROPORCAO_CITADA) {
+    motivo = `${(proporcaoCitada * 100).toFixed(0)}% do texto é citação (limite ${(MAX_PROPORCAO_CITADA * 100).toFixed(0)}%)`;
+  } else if (maior > MAX_SEQUENCIA_LITERAL) {
     motivo = `sequência literal de ${maior} palavras (limite ${MAX_SEQUENCIA_LITERAL})`;
   } else if (razao8grama > MAX_RAZAO_8GRAMA) {
     motivo = `${(razao8grama * 100).toFixed(0)}% de 8-gramas idênticos (limite ${(MAX_RAZAO_8GRAMA * 100).toFixed(0)}%)`;
   }
 
-  return { maiorSequencia: maior, razao8grama, aprovado: motivo === null, motivo, amostra };
+  return {
+    maiorSequencia: maior,
+    razao8grama,
+    proporcaoCitada,
+    aprovado: motivo === null,
+    motivo,
+    amostra,
+  };
 }
