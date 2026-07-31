@@ -8,7 +8,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/api/"],
+        disallow: ["/api/", "/admin"],
       },
     ],
     // O news-sitemap fica de fora enquanto vigora o Modo A: as páginas de matéria
