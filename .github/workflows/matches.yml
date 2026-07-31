@@ -33,6 +33,3 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           REVALIDATE_SECRET: ${{ secrets.REVALIDATE_SECRET }}
           REVALIDATE_URL: ${{ secrets.REVALIDATE_URL }}
-          # Não é segredo: hostname público do Worker, usado só quando a zona
-          # devolve Managed Challenge ao runner (ver core/revalidate.ts).
-          REVALIDATE_FALLBACK_URL: https://netfor.jejesavewords.workers.dev/api/revalidate

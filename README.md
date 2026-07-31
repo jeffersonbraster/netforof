@@ -71,12 +71,10 @@ Configurar em _Settings → Secrets and variables → Actions_:
       cria um *null MX* (`MX .`) e `SPF -all` por padrão, que bloqueiam o endereço
       publicado no site; ambos precisam ser removidos antes de habilitar
 - [x] Atualizar secret `REVALIDATE_URL` para `https://netfor.com.br/api/revalidate`
-- [ ] **Desligar o Bot Fight Mode da zona** (_Security → Bots_): ele devolve Managed
-      Challenge (`403` + `cf-mitigated: challenge` + "Just a moment...") ao IP do runner
-      do Actions, quebrando o webhook de revalidação. Não aceita exceção por regra de
-      WAF. Enquanto estiver ligado, o scraper usa a rota de escape via `workers.dev`
-      (ver `REVALIDATE_FALLBACK_URL` nos workflows); depois de desligar, remover
-      `workers_dev`/`preview_urls` do `wrangler.jsonc` e o fallback do `revalidate.ts`
+- [x] **Bot Fight Mode desligado** (_Security → Bots_, 31/07/2026): ligado, ele devolvia
+      Managed Challenge (`403` + `cf-mitigated: challenge` + "Just a moment...") ao IP do
+      runner do Actions e quebrava o webhook de revalidação. Não aceita exceção por
+      regra de WAF — só desligando. Se o sintoma voltar, é o primeiro lugar a olhar
 - [ ] [Google Search Console](https://search.google.com/search-console): verificar domínio e enviar `sitemap.xml`
 - [ ] [Google News Publisher Center](https://publishercenter.google.com): cadastrar o portal + feed RSS (`/noticias/rss`)
 - [ ] Analytics: ativar **Cloudflare Web Analytics** (gratuito, sem cookies) no dashboard do domínio
