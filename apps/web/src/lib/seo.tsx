@@ -36,6 +36,6 @@ export const webSiteJsonLd = {
   alternateName: "NETFOR — Notícias do Fortaleza EC",
   url: SITE_URL,
   description:
-    "Portal agregador de notícias do Fortaleza Esporte Clube: notícias, agenda de jogos, classificação, cantos da torcida e vídeos.",
+    "Notícias do Fortaleza Esporte Clube com texto próprio e fonte creditada: últimas notícias, agenda de jogos, classificação, cantos da torcida e vídeos.",
   inLanguage: "pt-BR",
 };

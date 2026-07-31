@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     template: `%s | ${SITE_NAME}`,
   },
   description:
-    "Portal agregador de notícias do Fortaleza Esporte Clube: últimas notícias, agenda de jogos, classificação, cantos da torcida e vídeos",
+    "Notícias do Fortaleza Esporte Clube com texto próprio e fonte creditada: últimas notícias, agenda de jogos, classificação, cantos da torcida e vídeos.",
   manifest: "/manifest.json",
   ...(GOOGLE_SITE_VERIFICATION && { verification: { google: GOOGLE_SITE_VERIFICATION } }),
   alternates: {

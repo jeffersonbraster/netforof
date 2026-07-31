@@ -15,12 +15,12 @@ export default function PrivacidadePage() {
     <div className="mx-auto max-w-3xl px-4 py-8">
       <SectionTitle>Política de Privacidade</SectionTitle>
       <div className="space-y-6 text-sm leading-relaxed">
-        <p className="text-muted">Última atualização: julho de 2026.</p>
+        <p className="text-muted">Última atualização: agosto de 2026.</p>
 
         <section className="space-y-2">
           <h2 className="font-display text-base font-bold">1. Quem somos</h2>
           <p>
-            O <strong>NETFOR</strong> (netfor.com.br) é um portal agregador de notícias sobre o
+            O <strong>NETFOR</strong> (netfor.com.br) é um portal de notícias sobre o
             Fortaleza Esporte Clube. Contato:{" "}
             <a
               href="mailto:contato@netfor.com.br"
@@ -86,8 +86,9 @@ export default function PrivacidadePage() {
         <section className="space-y-2">
           <h2 className="font-display text-base font-bold">5. Conteúdo de terceiros</h2>
           <p>
-            As notícias exibidas são resumos com crédito e link para os portais originais. Imagens
-            são servidas a partir das fontes creditadas. Solicitações de remoção:{" "}
+            O texto das matérias é de autoria do NETFOR. As fotografias são servidas a partir dos
+            veículos que as produziram, sempre creditados, e o veículo que apurou o fato é
+            identificado e linkado em cada matéria. Solicitações de correção ou remoção:{" "}
             <a
               href="mailto:contato@netfor.com.br"
               className="text-link underline underline-offset-4 hover:text-foreground"

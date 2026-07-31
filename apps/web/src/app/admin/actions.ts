@@ -8,7 +8,7 @@ import { criarSessao, encerrarSessao, exigirSessao, senhaCorreta } from "@/lib/a
 import { db } from "@/lib/db";
 
 /**
- * Toda ação revalida a sessão por conta própria. O gate do layout protege a
+ * Toda ação revalida a sessão por conta própria. O gate da página protege a
  * navegação, não a Server Action: ela é um endpoint e pode ser chamada direto.
  */
 
@@ -27,53 +27,66 @@ export async function sair(): Promise<void> {
   redirect("/admin/login");
 }
 
-/** Aprova o texto como está e coloca no ar. */
-export async function aprovar(dados: FormData): Promise<void> {
-  await exigirSessao();
-  const id = Number(dados.get("id"));
-  if (!Number.isInteger(id)) return;
-
-  await db.update(articles).set({ status: "published" }).where(eq(articles.id, id));
+/** Invalida as listas e a página da própria matéria. */
+function revalidar(slug: string) {
   revalidateTag("articles", "max");
-  revalidateTag(`article-${dados.get("slug")}`, "max");
+  if (slug) revalidateTag(`article-${slug}`, "max");
 }
 
-/** Descarta: sai da fila e não vai ao ar. */
-export async function reprovar(dados: FormData): Promise<void> {
+async function mudarEstado(dados: FormData, estado: "published" | "hidden" | "review") {
   await exigirSessao();
   const id = Number(dados.get("id"));
   if (!Number.isInteger(id)) return;
 
-  await db.update(articles).set({ status: "hidden" }).where(eq(articles.id, id));
-  revalidateTag("articles", "max");
+  await db.update(articles).set({ status: estado }).where(eq(articles.id, id));
+  revalidar(String(dados.get("slug") ?? ""));
+}
+
+export async function publicar(dados: FormData): Promise<void> {
+  await mudarEstado(dados, "published");
+}
+
+/** Tira do ar sem apagar: continua editável e pode voltar. */
+export async function despublicar(dados: FormData): Promise<void> {
+  await mudarEstado(dados, "hidden");
+}
+
+/** Devolve à fila de revisão. */
+export async function devolverParaRevisao(dados: FormData): Promise<void> {
+  await mudarEstado(dados, "review");
 }
 
 /**
- * Salva as correções e publica. Poder ajustar uma frase antes de publicar é o
- * que faz a revisão valer — sem isso só dá para aceitar ou descartar em bloco.
+ * Salva a edição. Vale para matéria já publicada também — corrigir uma frase
+ * depois de no ar é operação normal de portal, não exceção.
  */
-export async function editarEPublicar(dados: FormData): Promise<void> {
+export async function salvar(dados: FormData): Promise<void> {
   await exigirSessao();
 
   const id = Number(dados.get("id"));
   const titulo = String(dados.get("titulo") ?? "").trim();
   const resumo = String(dados.get("resumo") ?? "").trim();
   const conteudo = String(dados.get("conteudo") ?? "").trim();
+  const categoria = String(dados.get("categoria") ?? "").trim();
+  const imagemUrl = String(dados.get("imagemUrl") ?? "").trim();
+  const publicarAgora = dados.get("publicar") === "1";
 
-  if (!Number.isInteger(id) || !titulo || !resumo || !conteudo) return;
+  if (!Number.isInteger(id) || !titulo || !resumo) return;
 
   await db
     .update(articles)
     .set({
       title: titulo.slice(0, 200),
       excerpt: resumo.slice(0, 400),
-      // Normaliza para o mesmo formato que a reescrita grava: parágrafos
-      // separados por linha em branco.
-      content: conteudo.replace(/\r\n/g, "\n").replace(/\n{3,}/g, "\n\n"),
-      status: "published",
+      // Normaliza para o formato que a reescrita grava: parágrafos separados
+      // por linha em branco.
+      content: conteudo ? conteudo.replace(/\r\n/g, "\n").replace(/\n{3,}/g, "\n\n") : null,
+      category: categoria || null,
+      imageUrl: imagemUrl || null,
+      ...(publicarAgora ? { status: "published" as const } : {}),
     })
     .where(eq(articles.id, id));
 
-  revalidateTag("articles", "max");
-  revalidateTag(`article-${dados.get("slug")}`, "max");
+  revalidar(String(dados.get("slug") ?? ""));
+  redirect(publicarAgora ? "/admin?estado=published&salvo=1" : `/admin/materia/${id}?salvo=1`);
 }

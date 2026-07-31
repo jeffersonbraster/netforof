@@ -21,12 +21,25 @@ export default function SobrePage() {
         </p>
         <p>
           O portal tem como objetivo manter todos os torcedores e amantes do Fortaleza informados
-          sobre tudo que acontece no clube, buscando informações nas principais fontes de notícias
+          sobre tudo que acontece no clube, acompanhando as principais fontes de notícias
           sobre o Maior time do Nordeste e do mundo!!
         </p>
         <p>
-          Cada notícia exibida traz o crédito e o link para a matéria original — valorizamos o
-          trabalho dos veículos que cobrem o Leão do Pici diariamente.
+          <strong>Como trabalhamos.</strong> Acompanhamos a cobertura dos principais veículos que
+          noticiam o Fortaleza e escrevemos nossas próprias matérias sobre os fatos relatados. Não
+          reproduzimos textos de terceiros: o texto que você lê aqui é nosso. O veículo que apurou
+          a informação é sempre identificado e linkado, porque o mérito da apuração é dele.
+        </p>
+        <p>
+          <strong>Transparência.</strong> Nossas matérias são redigidas com apoio de ferramenta
+          automatizada e passam por revisão humana antes de ir ao ar. Não publicamos número, data,
+          valor ou declaração que não conste da apuração original. Declarações entre aspas são
+          mantidas como foram ditas e atribuídas a quem falou.
+        </p>
+        <p>
+          <strong>Erros e correções.</strong> Se encontrar qualquer imprecisão, escreva para o
+          e-mail abaixo. Corrigimos ou tiramos do ar assim que verificamos. Veículos e fotógrafos
+          que queiram correção de crédito ou remoção de conteúdo têm o mesmo canal — e prioridade.
         </p>
         <p>
           Além das notícias, você acompanha a agenda de jogos, a classificação do Brasileirão, os
