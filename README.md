@@ -118,6 +118,19 @@ Headers vão todos pelo `headers()` do `next.config.ts` — CSP, HSTS (2 anos, p
 - `postcss` e `sharp` aparecem no `pnpm audit` via Next: são build-time, não rodam no
   Worker. Só somem quando o Next atualizar as transitivas.
 
+## robots.txt: a Cloudflare injeta conteúdo próprio
+
+O `robots.txt` servido **não é só o nosso**. A Cloudflare prepende um bloco
+_Managed content_ com `Content-Signal` e `Disallow` para crawlers de IA
+(`GPTBot`, `ClaudeBot`, `CCBot`, `Google-Extended`, `Bytespider`, `Amazonbot`,
+`meta-externalagent`, entre outros). Vem de _AI Crawl Control_ no dashboard.
+
+- **Não afeta o Google Search.** `Google-Extended` cobre treino de IA do Google,
+  não o rastreamento de busca — o `Googlebot` continua liberado.
+- Resultado: o arquivo tem dois grupos `User-agent: *`. Crawlers que seguem a
+  RFC 9309 fundem os grupos, então o nosso `Disallow: /api/` continua valendo.
+- Para mudar esse bloco, é no dashboard da Cloudflare, não no `robots.ts`.
+
 ## Armadilha: `loading.tsx` e 404
 
 Rota com parâmetro dinâmico que precisa devolver **404 não pode ter `loading.tsx`**.
