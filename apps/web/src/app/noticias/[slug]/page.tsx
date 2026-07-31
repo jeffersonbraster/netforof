@@ -32,8 +32,6 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
     title: article.title,
     description: article.excerpt,
     alternates: { canonical: `/noticias/${slug}` },
-    // Modo A: a matéria completa vive na fonte — evita punição por conteúdo duplicado
-    robots: { index: false, follow: true },
   };
 }
 
@@ -74,9 +72,16 @@ async function ArticleBody({ slug }: { slug: string }) {
     datePublished: article.publishedAt.toISOString(),
     inLanguage: "pt-BR",
     url: `${SITE_URL}/noticias/${article.slug}`,
-    ...(daRedacao ? {} : { isBasedOn: article.originalUrl }),
-    author: { "@type": "Organization", name: daRedacao ? "NETFOR" : article.sourceName },
-    publisher: { "@type": "Organization", name: "NETFOR", url: SITE_URL },
+    // Fato apurado por terceiro: sinaliza a origem sem ceder a autoria do texto.
+    ...(daRedacao ? {} : { isBasedOn: article.originalUrl, citation: article.originalUrl }),
+    author: { "@type": "Organization", name: "NETFOR", url: SITE_URL },
+    dateModified: article.publishedAt.toISOString(),
+    publisher: {
+      "@type": "Organization",
+      name: "NETFOR",
+      url: SITE_URL,
+      logo: { "@type": "ImageObject", url: `${SITE_URL}/netfor.svg` },
+    },
   };
 
   return (

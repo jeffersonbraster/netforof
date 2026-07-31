@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, articles, sources } from "@netfor/db";
+import { and, desc, eq, gte, isNotNull, articles, sources } from "@netfor/db";
 
 import { db } from "@/lib/db";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
@@ -13,10 +13,9 @@ function escapeXml(input: string): string {
 }
 
 /**
- * News-sitemap (protocolo Google News): últimas 48h.
- * Nota Modo A: as páginas de artigo são noindex, então este sitemap só passa a
- * ter efeito quando o Modo B (conteúdo próprio indexável) for ativado — já fica
- * pronto para isso.
+ * News-sitemap (protocolo Google News): últimas 48h, só matérias com texto
+ * próprio. O filtro por `content` é deliberado — o Google News não deve receber
+ * nada que não seja de nossa autoria.
  */
 export async function GET() {
   const since = new Date(Date.now() - 48 * 60 * 60 * 1000);
@@ -30,7 +29,13 @@ export async function GET() {
     })
     .from(articles)
     .innerJoin(sources, eq(articles.sourceId, sources.id))
-    .where(and(eq(articles.status, "published"), gte(articles.publishedAt, since)))
+    .where(
+      and(
+        eq(articles.status, "published"),
+        isNotNull(articles.content),
+        gte(articles.publishedAt, since),
+      ),
+    )
     .orderBy(desc(articles.publishedAt))
     .limit(100);
 

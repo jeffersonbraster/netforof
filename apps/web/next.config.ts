@@ -15,7 +15,6 @@ config({ path: "../../.env" });
  * mata clickjacking, `base-uri` e `form-action` fecham sequestro de <base> e
  * exfiltração por formulário, `object-src` derruba plugins legados.
  *
- * Ao ativar o AdSense, liberar aqui os domínios do Google (script/frame/img).
  */
 // Cloudflare Web Analytics roda em instalação AUTOMÁTICA: a borda injeta o
 // beacon no HTML, sem nenhum código nosso e sem site token (por isso o token não
@@ -31,14 +30,32 @@ config({ path: "../../.env" });
 const CF_ANALYTICS_SCRIPT = "https://static.cloudflareinsights.com";
 const CF_ANALYTICS_BEACON = "https://cloudflareinsights.com";
 
+/**
+ * AdSense. Liberado ANTES de ativar, de propósito: quando o beacon do Web
+ * Analytics ficou de fora da CSP, a medição morreu em silêncio com o painel
+ * ainda dizendo "ativo". Com anúncio o sintoma seria pior — espaço em branco no
+ * lugar do anúncio, sem erro visível. Sem `NEXT_PUBLIC_ADSENSE_CLIENT` nada é
+ * carregado, então liberar aqui não abre superfície nenhuma hoje.
+ */
+const ADSENSE = [
+  "https://pagead2.googlesyndication.com",
+  "https://*.googlesyndication.com",
+  "https://*.googleadservices.com",
+  "https://*.doubleclick.net",
+  "https://*.google.com",
+  "https://*.gstatic.com",
+];
+
 const CSP = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline' ${CF_ANALYTICS_SCRIPT}`,
+  `script-src 'self' 'unsafe-inline' ${CF_ANALYTICS_SCRIPT} ${ADSENSE.join(" ")}`,
   "style-src 'self' 'unsafe-inline'",
   // Imagens vêm dos portais agregados; o otimizador do Next serve como data:/blob:
   "img-src 'self' data: blob: https:",
+  // Anúncio é servido dentro de iframe do Google.
+  `frame-src 'self' ${ADSENSE.join(" ")}`,
   "font-src 'self' data:",
-  `connect-src 'self' ${CF_ANALYTICS_SCRIPT} ${CF_ANALYTICS_BEACON}`,
+  `connect-src 'self' ${CF_ANALYTICS_SCRIPT} ${CF_ANALYTICS_BEACON} ${ADSENSE.join(" ")}`,
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",

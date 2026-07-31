@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-import { desc, articles, chants } from "@netfor/db";
+import { and, desc, eq, isNotNull, articles, chants } from "@netfor/db";
 
 import { db } from "@/lib/db";
 import { SITE_URL } from "@/lib/seo";
@@ -13,6 +13,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .limit(1);
 
   const allChants = await db.select({ slug: chants.slug }).from(chants);
+
+  /**
+   * Só entra no sitemap matéria COM texto próprio. É a trava que impede um
+   * resquício do Modo A — resumo de terceiro — de ser oferecido ao índice.
+   */
+  const materias = await db
+    .select({ slug: articles.slug, atualizada: articles.publishedAt })
+    .from(articles)
+    .where(and(eq(articles.status, "published"), isNotNull(articles.content)))
+    .orderBy(desc(articles.publishedAt))
+    .limit(5000);
 
   const lastNews = latestArticle?.scrapedAt ?? new Date();
 
@@ -41,6 +52,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.5,
   }));
 
-  // Páginas de artigo (Modo A) são noindex — ficam fora do sitemap de propósito.
-  return [...staticPages, ...chantPages];
+  const materiaPages: MetadataRoute.Sitemap = materias.map((m) => ({
+    url: `${SITE_URL}/noticias/${m.slug}`,
+    lastModified: m.atualizada,
+    changeFrequency: "weekly",
+    priority: 0.7,
+  }));
+
+  return [...staticPages, ...chantPages, ...materiaPages];
 }

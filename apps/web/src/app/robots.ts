@@ -11,9 +11,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/api/", "/admin"],
       },
     ],
-    // O news-sitemap fica de fora enquanto vigora o Modo A: as páginas de matéria
-    // são noindex, então anunciá-lo só gasta rastreamento e enche o relatório de
-    // cobertura do Search Console de "excluída por noindex". Reincluir no Modo B.
-    sitemap: [`${SITE_URL}/sitemap.xml`],
+    sitemap: [`${SITE_URL}/sitemap.xml`, `${SITE_URL}/news-sitemap.xml`],
   };
 }
