@@ -12,6 +12,8 @@ export interface ArticleCard {
 export interface ArticleDetail extends ArticleCard {
   originalUrl: string;
   sourceSlug: string;
+  /** Texto próprio em parágrafos separados por linha em branco; nulo no legado. */
+  content: string | null;
   related: ArticleCard[];
 }
 

@@ -182,6 +182,7 @@ export async function getArticleDetail(slug: string): Promise<ArticleDetail | nu
       ...cardColumns,
       originalUrl: articles.originalUrl,
       sourceSlug: sources.slug,
+      content: articles.content,
       contentHash: articles.contentHash,
     })
     .from(articles)

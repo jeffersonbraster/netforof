@@ -59,6 +59,12 @@ async function ArticleBody({ slug }: { slug: string }) {
   const article = await getArticleDetail(slug);
   if (!article) notFound();
 
+  const daRedacao = article.sourceSlug === "netfor";
+  const paragrafos = (article.content ?? "")
+    .split(/\n\s*\n/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+
   const newsArticleJsonLd = {
     "@context": "https://schema.org",
     "@type": "NewsArticle",
@@ -68,8 +74,8 @@ async function ArticleBody({ slug }: { slug: string }) {
     datePublished: article.publishedAt.toISOString(),
     inLanguage: "pt-BR",
     url: `${SITE_URL}/noticias/${article.slug}`,
-    isBasedOn: article.originalUrl,
-    author: { "@type": "Organization", name: article.sourceName },
+    ...(daRedacao ? {} : { isBasedOn: article.originalUrl }),
+    author: { "@type": "Organization", name: daRedacao ? "NETFOR" : article.sourceName },
     publisher: { "@type": "Organization", name: "NETFOR", url: SITE_URL },
   };
 
@@ -110,21 +116,31 @@ async function ArticleBody({ slug }: { slug: string }) {
 
       <p className="mt-6 text-lg leading-relaxed">{article.excerpt}</p>
 
-      {/* Modo A: crédito visível + CTA para a fonte original */}
-      <div className="mt-8 rounded-xl border border-line bg-surface p-5">
-        <p className="text-sm text-muted">
-          Esta é uma prévia. A matéria completa foi publicada por{" "}
-          <strong className="text-foreground">{article.sourceName}</strong>.
-        </p>
-        <a
-          href={article.originalUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-3 inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-white transition-colors hover:bg-primary/85"
-        >
-          Ler matéria completa na fonte →
-        </a>
-      </div>
+      {paragrafos.length > 0 && (
+        <div className="mt-6 space-y-4 text-base leading-relaxed">
+          {paragrafos.map((paragrafo, i) => (
+            <p key={i}>{paragrafo}</p>
+          ))}
+        </div>
+      )}
+
+      {/* Matéria da casa não tem fonte externa para creditar. */}
+      {!daRedacao && (
+        <div className="mt-8 rounded-xl border border-line bg-surface p-5">
+          <p className="text-sm text-muted">
+            Fato apurado por{" "}
+            <strong className="text-foreground">{article.sourceName}</strong>.
+          </p>
+          <a
+            href={article.originalUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-white transition-colors hover:bg-primary/85"
+          >
+            Ver publicação original →
+          </a>
+        </div>
+      )}
 
       <div className="mt-8">
         <AdSlot format="leaderboard" />

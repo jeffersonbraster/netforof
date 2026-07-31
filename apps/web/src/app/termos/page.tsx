@@ -19,31 +19,22 @@ export default function TermosPage() {
         <section className="space-y-2">
           <h2 className="font-display text-base font-bold">1. O serviço</h2>
           <p>
-            O NETFOR publica <strong>textos próprios</strong> sobre fatos relativos ao Fortaleza
-            Esporte Clube noticiados pela imprensa. Cada matéria é redigida por nós a partir da
-            apuração de veículos jornalísticos, que são <strong>identificados e linkados</strong>{" "}
-            em todas as páginas. O portal é independente e{" "}
-            <strong>não possui vínculo oficial com o Fortaleza EC</strong> nem com os veículos
-            citados.
-          </p>
-          <p>
-            Não reproduzimos matérias de terceiros. Reproduzimos apenas os fatos — que não são
-            objeto de direito autoral — e, quando necessário, declarações entre aspas atribuídas a
-            quem as proferiu, no exercício do direito de citação.
+            O NETFOR é um portal de notícias sobre o Fortaleza Esporte Clube. Publicamos{" "}
+            <strong>conteúdo de nossa autoria</strong> e creditamos as fontes das informações
+            quando aplicável. O portal é independente e{" "}
+            <strong>não possui vínculo oficial com o Fortaleza EC</strong>.
           </p>
         </section>
 
         <section className="space-y-2">
           <h2 className="font-display text-base font-bold">2. Propriedade intelectual</h2>
           <p>
-            O texto publicado no NETFOR é de nossa autoria. As <strong>fotografias</strong> exibidas
-            pertencem aos veículos ou fotógrafos que as produziram, sempre creditados, e são
-            utilizadas para ilustrar a cobertura do fato noticiado. Marcas e escudos citados
-            pertencem aos seus titulares.
+            O conteúdo editorial do NETFOR é de nossa autoria. Imagens e marcas de terceiros
+            pertencem aos seus respectivos titulares.
           </p>
           <p>
-            Veículos, fotógrafos ou titulares de direitos que desejem correção, crédito adicional
-            ou remoção de qualquer conteúdo podem contatar{" "}
+            Titulares de direitos que identifiquem necessidade de ajuste, crédito ou remoção podem
+            entrar em contato pelo e-mail{" "}
             <a
               href="mailto:contato@netfor.com.br"
               className="text-link underline underline-offset-4 hover:text-foreground"
@@ -57,21 +48,19 @@ export default function TermosPage() {
         <section className="space-y-2">
           <h2 className="font-display text-base font-bold">3. Política editorial e correções</h2>
           <p>
-            Nossas matérias são redigidas com apoio de ferramenta automatizada de redação e{" "}
-            <strong>passam por revisão humana antes da publicação</strong>. Não publicamos
-            informação que não conste da apuração da fonte citada: não inferimos números, datas,
-            valores ou declarações.
+            Nosso conteúdo passa por <strong>revisão editorial antes da publicação</strong>.
+            Prezamos pela precisão factual e não publicamos informação que não possamos verificar
+            na origem.
           </p>
           <p>
-            Erros acontecem. Se você identificar qualquer imprecisão, escreva para{" "}
+            Se identificar qualquer imprecisão, escreva para{" "}
             <a
               href="mailto:contato@netfor.com.br"
               className="text-link underline underline-offset-4 hover:text-foreground"
             >
               contato@netfor.com.br
             </a>
-            . Matérias com erro são corrigidas ou despublicadas assim que verificamos o
-            apontamento.
+            . Conteúdo com erro é corrigido ou removido assim que verificamos o apontamento.
           </p>
         </section>
 

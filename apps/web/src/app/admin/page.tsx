@@ -60,11 +60,19 @@ async function Painel({ searchParams }: { searchParams: Busca }) {
     <>
       <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-2xl font-extrabold">Painel NETFOR</h1>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/admin/materia/nova"
+            className="h-9 rounded-lg bg-primary px-4 text-sm leading-9 font-semibold text-white"
+          >
+            + Nova matéria
+          </Link>
         <form action={sair}>
           <button type="submit" className="text-sm text-link hover:underline">
             Sair
           </button>
         </form>
+        </div>
       </header>
 
       {params.salvo && (

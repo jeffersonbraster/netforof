@@ -83,22 +83,6 @@ export default function PrivacidadePage() {
           </p>
         </section>
 
-        <section className="space-y-2">
-          <h2 className="font-display text-base font-bold">5. Conteúdo de terceiros</h2>
-          <p>
-            O texto das matérias é de autoria do NETFOR. As fotografias são servidas a partir dos
-            veículos que as produziram, sempre creditados, e o veículo que apurou o fato é
-            identificado e linkado em cada matéria. Solicitações de correção ou remoção:{" "}
-            <a
-              href="mailto:contato@netfor.com.br"
-              className="text-link underline underline-offset-4 hover:text-foreground"
-            >
-              contato@netfor.com.br
-            </a>
-            .
-          </p>
-        </section>
-
         <p>
           Veja também os{" "}
           <Link

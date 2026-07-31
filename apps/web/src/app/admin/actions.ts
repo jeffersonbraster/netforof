@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 
 import { criarSessao, encerrarSessao, exigirSessao, senhaCorreta } from "@/lib/admin-auth";
 import { db } from "@/lib/db";
+import { criarMateriaPropria } from "@/modules/admin/redacao";
 
 /**
  * Toda ação revalida a sessão por conta própria. O gate da página protege a
@@ -89,4 +90,33 @@ export async function salvar(dados: FormData): Promise<void> {
 
   revalidar(String(dados.get("slug") ?? ""));
   redirect(publicarAgora ? "/admin?estado=published&salvo=1" : `/admin/materia/${id}?salvo=1`);
+}
+
+/**
+ * Cria matéria de autoria própria (atualização do portal, tutorial, análise).
+ * Não passa pelo scraper nem pela reescrita: já nasce com texto da casa.
+ */
+export async function criarMateria(dados: FormData): Promise<void> {
+  await exigirSessao();
+
+  const titulo = String(dados.get("titulo") ?? "").trim();
+  const resumo = String(dados.get("resumo") ?? "").trim();
+  const conteudo = String(dados.get("conteudo") ?? "")
+    .replace(/\r\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+
+  if (!titulo || !resumo || !conteudo) return;
+
+  const id = await criarMateriaPropria({
+    titulo,
+    resumo,
+    conteudo,
+    categoria: String(dados.get("categoria") ?? "").trim() || null,
+    imagemUrl: String(dados.get("imagemUrl") ?? "").trim() || null,
+    publicar: dados.get("publicar") === "1",
+  });
+
+  revalidateTag("articles", "max");
+  redirect(`/admin/materia/${id}?salvo=1`);
 }
