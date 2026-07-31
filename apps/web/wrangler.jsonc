@@ -45,16 +45,12 @@
       "new_sqlite_classes": ["DOQueueHandler"],
     },
   ],
-  // Domínio próprio: netfor.com.br (registrado no registro.br em 30/07/2026).
-  // Só descomente DEPOIS que a zona estiver ativa na Cloudflare — com o domínio
-  // ainda apontando para a.auto.dns.br, o deploy falha com "zone not found".
-  //   1. Cloudflare → Add a site → netfor.com.br (plano Free)
-  //   2. registro.br → DNS → alterar servidores para os NS que a Cloudflare mostrar
-  //   3. esperar a zona ficar "Active", descomentar abaixo e rodar o deploy
-  // "routes": [
-  //   { "pattern": "netfor.com.br", "custom_domain": true },
-  //   { "pattern": "www.netfor.com.br", "custom_domain": true },
-  // ],
+  // Domínio próprio: netfor.com.br (zona ativa na Cloudflare desde 31/07/2026).
+  // custom_domain cria o registro DNS e o certificado automaticamente.
+  "routes": [
+    { "pattern": "netfor.com.br", "custom_domain": true },
+    { "pattern": "www.netfor.com.br", "custom_domain": true },
+  ],
   "vars": {
     "REWRITE_MODE": "false",
   },
