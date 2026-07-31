@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getArticlesPage, getNewsFilters } from "@/modules/news/queries";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/noticias" },
   title: "Notícias do Fortaleza",
   description:
     "Todas as notícias do Fortaleza Esporte Clube agregadas dos principais portais, atualizadas 24/7.",

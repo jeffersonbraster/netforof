@@ -4,6 +4,7 @@ import Link from "next/link";
 import { SectionTitle } from "@/components/ui/section-title";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/privacidade" },
   title: "Política de Privacidade",
   description:
     "Como o NETFOR trata dados pessoais, cookies e publicidade, em conformidade com a LGPD.",

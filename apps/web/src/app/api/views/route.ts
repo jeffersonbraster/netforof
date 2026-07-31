@@ -13,10 +13,42 @@ function todayInFortaleza(): string {
   }).format(new Date());
 }
 
+/**
+ * Contador de leituras: aberto por natureza (o navegador chama sem credencial),
+ * mas cada requisição custa um SELECT e um UPSERT no Neon. Sem nenhum filtro,
+ * um laço de curl inflava as "mais lidas" e queimava cota de banco.
+ *
+ * Não é autenticação — é higiene: exige que a chamada tenha vindo do próprio
+ * site, o que já descarta abuso trivial de fora. Rate limit de verdade, por IP,
+ * é regra na borda da Cloudflare (o plano free permite uma).
+ */
+function veioDoProprioSite(request: Request): boolean {
+  // Enviado por todo navegador atual; ausente em curl/script simples.
+  const destino = request.headers.get("sec-fetch-site");
+  if (destino && destino !== "same-origin") return false;
+
+  const origem = request.headers.get("origin");
+  if (!origem) return destino === "same-origin";
+
+  try {
+    return new URL(origem).host === new URL(request.url).host;
+  } catch {
+    return false;
+  }
+}
+
+const SLUG_VALIDO = /^[a-z0-9-]{1,200}$/;
+
 export async function POST(request: Request) {
+  if (!veioDoProprioSite(request)) {
+    return Response.json({ error: "origem inválida" }, { status: 403 });
+  }
+
   const body = (await request.json().catch(() => ({}))) as { slug?: unknown };
   const slug = typeof body.slug === "string" ? body.slug : null;
-  if (!slug) {
+  // Barra formato inválido antes de ir ao banco: economiza a consulta e mantém
+  // o parâmetro dentro do alfabeto que o gerador de slug produz.
+  if (!slug || !SLUG_VALIDO.test(slug)) {
     return Response.json({ error: "slug obrigatório" }, { status: 400 });
   }
 

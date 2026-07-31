@@ -17,6 +17,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const chant = await getChantBySlug(slug);
   if (!chant) return { title: "Canto não encontrado" };
   return {
+    alternates: { canonical: `/cantos-da-torcida/${slug}` },
     title: `${chant.title} — Letra`,
     description: `Letra de "${chant.title}" — ${chant.category === "hino" ? "hino" : "canto da torcida"} do Fortaleza Esporte Clube.`,
   };

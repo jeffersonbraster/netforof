@@ -6,6 +6,7 @@ import { SectionTitle } from "@/components/ui/section-title";
 import { getChants } from "@/modules/chants/queries";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/cantos-da-torcida" },
   title: "Cantos da Torcida e Hinos",
   description:
     "Letras do hino do Fortaleza Esporte Clube e dos cantos da torcida tricolor para cantar no Castelão.",
@@ -42,7 +43,7 @@ export default async function CantosPage() {
                     className="group block h-full rounded-xl border border-line bg-surface p-4 transition-colors hover:border-primary/40"
                   >
                     <div className="mb-2 flex items-center justify-between gap-2">
-                      <h3 className="font-display font-bold group-hover:text-primary">
+                      <h3 className="font-display font-bold group-hover:text-primary-text">
                         {chant.title}
                       </h3>
                       <Badge variant={chant.category === "hino" ? "category" : "neutral"}>

@@ -25,7 +25,7 @@ export function ChantsWidget({ chants }: { chants: ChantSummary[] }) {
               className="group block rounded-xl border border-line bg-surface p-3 transition-colors hover:border-primary/40"
             >
               <div className="mb-1 flex items-center justify-between gap-2">
-                <h3 className="truncate text-sm font-semibold group-hover:text-primary">
+                <h3 className="truncate text-sm font-semibold group-hover:text-primary-text">
                   {chant.title}
                 </h3>
                 <Badge variant={chant.category === "hino" ? "category" : "neutral"}>

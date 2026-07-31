@@ -13,13 +13,13 @@ export function MostRead({ items }: { items: MostReadItem[] }) {
           <li key={item.slug}>
             <Link href={`/noticias/${item.slug}`} className="group flex gap-3">
               <span
-                className="font-display text-2xl leading-none font-black text-primary/60"
+                className="font-display text-2xl leading-none font-black text-primary-text/80"
                 aria-hidden
               >
                 {index + 1}
               </span>
               <span className="min-w-0">
-                <span className="line-clamp-2 text-sm leading-snug font-semibold group-hover:text-primary">
+                <span className="line-clamp-2 text-sm leading-snug font-semibold group-hover:text-primary-text">
                   {item.title}
                 </span>
                 {item.views > 0 && (

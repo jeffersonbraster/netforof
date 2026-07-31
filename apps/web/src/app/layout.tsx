@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     template: `%s | ${SITE_NAME}`,
   },
   description:
-    "Portal agregador de notícias do Fortaleza Esporte Clube: últimas notícias, agenda de jogos, classificação, cantos da torcida e vídeos — atualizado 24/7.",
+    "Portal agregador de notícias do Fortaleza Esporte Clube: últimas notícias, agenda de jogos, classificação, cantos da torcida e vídeos",
   manifest: "/manifest.json",
   alternates: {
     types: { "application/rss+xml": "/noticias/rss" },
@@ -63,8 +63,18 @@ export default function RootLayout({
       <body className="flex min-h-full flex-col">
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <JsonLd data={webSiteJsonLd} />
+        {/* WCAG 2.4.1: sem isto, quem navega por teclado atravessa o header fixo
+            e as duas navs a cada página antes de chegar ao conteúdo. */}
+        <a
+          href="#conteudo"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-[100] focus:rounded-lg focus:bg-surface focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-foreground focus:outline-2 focus:outline-offset-2 focus:outline-link"
+        >
+          Pular para o conteúdo
+        </a>
         <Header />
-        <main className="flex-1">{children}</main>
+        <main id="conteudo" tabIndex={-1} className="flex-1">
+          {children}
+        </main>
         <Footer />
         {/* Anúncios carregam lazy (pós-load) — não competem com o LCP */}
         {ADSENSE_CLIENT && (

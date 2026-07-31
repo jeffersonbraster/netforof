@@ -7,6 +7,7 @@ import { formatShortDateTime } from "@/lib/format";
 import { getStandings } from "@/modules/matches/queries";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/classificacao" },
   title: "Classificação — Brasileirão Série B",
   description:
     "Tabela completa do Brasileirão Série B com a campanha do Fortaleza: pontos, jogos, vitórias, saldo de gols e aproveitamento.",
@@ -61,7 +62,7 @@ export default async function ClassificacaoPage() {
                         promotion
                           ? "bg-emerald-500/15 text-emerald-500"
                           : relegation
-                            ? "bg-primary/15 text-primary"
+                            ? "bg-primary/15 text-primary-text"
                             : "text-muted"
                       }`}
                     >

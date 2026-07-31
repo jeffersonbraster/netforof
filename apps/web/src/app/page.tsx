@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { cacheLife, cacheTag } from "next/cache";
 
 import { MatchTicker } from "@/components/matches/match-ticker";
@@ -13,6 +14,10 @@ import { SponsorCard } from "@/components/widgets/sponsor-card";
 import { getChants } from "@/modules/chants/queries";
 import { getRecentResults, getStandings, getTickerMatches } from "@/modules/matches/queries";
 import { getHomeArticles, getMostReadWeek } from "@/modules/news/queries";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 export default async function Home() {
   "use cache";
@@ -92,8 +97,8 @@ export default async function Home() {
                   {match.competition}
                 </p>
                 <p className="font-display text-lg font-bold">
-                  {match.homeTeam} <span className="text-primary">{match.homeScore}</span> ×{" "}
-                  <span className="text-primary">{match.awayScore}</span> {match.awayTeam}
+                  {match.homeTeam} <span className="text-primary-text">{match.homeScore}</span> ×{" "}
+                  <span className="text-primary-text">{match.awayScore}</span> {match.awayTeam}
                 </p>
                 <p className="mt-2 text-xs text-muted">
                   {formatKickoff(match.kickoffAt)}

@@ -16,7 +16,7 @@ export function SponsorCard() {
         </div>
         <div className="flex items-center gap-2 px-3 py-2">
           <span
-            className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[10px] font-bold text-primary"
+            className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[10px] font-bold text-primary-text"
             aria-hidden
           >
             18+

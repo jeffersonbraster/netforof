@@ -8,6 +8,7 @@ import { getRecentResults } from "@/modules/matches/queries";
 import type { Match } from "@netfor/db";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/videos" },
   title: "Vídeos e Últimos Jogos",
   description:
     "Placares dos últimos jogos do Fortaleza Esporte Clube com links para os melhores momentos.",
@@ -60,9 +61,9 @@ export default async function VideosPage() {
                   />
                 )}
                 <p className="font-display text-xl font-bold tabular-nums">
-                  <span className="text-primary">{match.homeScore}</span>
+                  <span className="text-primary-text">{match.homeScore}</span>
                   <span className="mx-2 text-muted">×</span>
-                  <span className="text-primary">{match.awayScore}</span>
+                  <span className="text-primary-text">{match.awayScore}</span>
                 </p>
                 {match.awayLogo && (
                   <Image

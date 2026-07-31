@@ -3,7 +3,7 @@ type BadgeVariant = "category" | "source" | "live" | "neutral";
 const styles: Record<BadgeVariant, string> = {
   category: "bg-secondary/15 text-link border-secondary/30",
   source: "bg-surface-2 text-muted border-line",
-  live: "bg-primary/15 text-primary border-primary/40",
+  live: "bg-primary/15 text-primary-text border-primary/40",
   neutral: "bg-surface-2 text-foreground border-line",
 };
 

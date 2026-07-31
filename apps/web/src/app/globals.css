@@ -12,6 +12,14 @@
   --brand-red: #e11d2e;
   --brand-blue: #003da5;
   --link: #1c4fd6;
+  /* O vermelho da marca só alcança 4.4:1 sobre o fundo claro e 3.4:1 no escuro:
+     serve de preenchimento (com texto branco dá 4.75:1), não de cor de texto.
+     Este token é a versão legível para texto — WCAG 1.4.3 pede 4.5:1. */
+  --primary-text: #b3111f;
+}
+
+[data-theme="dark"] {
+  --primary-text: #ff8a94;
 }
 
 [data-theme="dark"] {
@@ -32,6 +40,7 @@
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
   --color-primary: var(--brand-red);
+  --color-primary-text: var(--primary-text);
   --color-secondary: var(--brand-blue);
   --color-link: var(--link);
   --font-sans: var(--font-inter);
@@ -40,6 +49,29 @@
 
 html {
   scroll-behavior: smooth;
+}
+
+/* WCAG 2.4.7: o anel padrão do navegador é fino e escuro, praticamente
+   invisível sobre o tema escuro. Um anel próprio, com a cor de link (>=7:1
+   sobre os fundos), garante que dá para ver onde o teclado está. */
+:focus-visible {
+  outline: 2px solid var(--link);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Respeita quem pediu menos movimento no sistema (WCAG 2.3.3). */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 body {

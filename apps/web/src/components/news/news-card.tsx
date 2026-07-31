@@ -37,7 +37,7 @@ export function NewsCard({ article }: { article: ArticleCard }) {
             {article.category && <Badge variant="category">{article.category}</Badge>}
             <Badge variant="source">{article.sourceName}</Badge>
           </div>
-          <h3 className="font-display text-base leading-snug font-bold group-hover:text-primary">
+          <h3 className="font-display text-base leading-snug font-bold group-hover:text-primary-text">
             {article.title}
           </h3>
           <p className="line-clamp-2 text-sm leading-relaxed text-muted">{article.excerpt}</p>
@@ -79,7 +79,7 @@ export function CompactCard({ article }: { article: ArticleCard }) {
           <CardImage article={article} sizes="112px" />
         </div>
         <div className="min-w-0 space-y-1">
-          <h3 className="line-clamp-2 text-sm leading-snug font-semibold group-hover:text-primary">
+          <h3 className="line-clamp-2 text-sm leading-snug font-semibold group-hover:text-primary-text">
             {article.title}
           </h3>
           <p className="text-xs text-muted">

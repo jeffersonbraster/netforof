@@ -31,6 +31,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   return {
     title: article.title,
     description: article.excerpt,
+    alternates: { canonical: `/noticias/${slug}` },
     // Modo A: a matéria completa vive na fonte — evita punição por conteúdo duplicado
     robots: { index: false, follow: true },
   };

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { SectionTitle } from "@/components/ui/section-title";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/sobre" },
   title: "Sobre o NETFOR",
   description:
     "Conheça o NETFOR, portal que reúne as notícias do Fortaleza Esporte Clube em um só lugar, atualizado 24/7.",

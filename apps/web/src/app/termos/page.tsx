@@ -4,6 +4,7 @@ import Link from "next/link";
 import { SectionTitle } from "@/components/ui/section-title";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/termos" },
   title: "Termos de Uso",
   description: "Condições de uso do portal NETFOR, agregador de notícias do Fortaleza EC.",
 };

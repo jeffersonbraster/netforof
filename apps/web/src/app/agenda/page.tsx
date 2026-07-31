@@ -10,6 +10,7 @@ import { getAgenda } from "@/modules/matches/queries";
 import type { Match } from "@netfor/db";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/agenda" },
   title: "Agenda de Jogos do Fortaleza",
   description:
     "Próximos jogos e resultados do Fortaleza Esporte Clube: datas, horários, estádios e placares atualizados.",
