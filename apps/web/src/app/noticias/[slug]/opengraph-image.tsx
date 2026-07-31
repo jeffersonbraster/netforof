@@ -4,13 +4,13 @@ import { getArticleBySlug } from "@/modules/news/queries";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
-export const alt = "NET FOR — Notícias do Fortaleza EC";
+export const alt = "NETFOR — Notícias do Fortaleza EC";
 
 export default async function OpengraphImage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const article = await getArticleBySlug(slug);
 
-  const title = article?.title ?? "NET FOR — Todas as notícias do Leão em um só lugar";
+  const title = article?.title ?? "NETFOR — Todas as notícias do Leão em um só lugar";
   const category = article?.category ?? "Notícias";
   const source = article?.sourceName ?? "";
 

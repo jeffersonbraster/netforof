@@ -55,7 +55,7 @@ export default async function ArticlePage({ params }: { params: Params }) {
     url: `${SITE_URL}/noticias/${article.slug}`,
     isBasedOn: article.originalUrl,
     author: { "@type": "Organization", name: article.sourceName },
-    publisher: { "@type": "Organization", name: "NET FOR", url: SITE_URL },
+    publisher: { "@type": "Organization", name: "NETFOR", url: SITE_URL },
   };
 
   return (

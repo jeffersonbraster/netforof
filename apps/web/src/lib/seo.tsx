@@ -1,5 +1,5 @@
-export const SITE_URL = "https://netfor.club";
-export const SITE_NAME = "NET FOR";
+export const SITE_URL = "https://netfor.com.br";
+export const SITE_NAME = "NETFOR";
 
 /** Injeta JSON-LD estruturado. Uso: <JsonLd data={{...}} /> */
 export function JsonLd({ data }: { data: Record<string, unknown> }) {
@@ -25,7 +25,7 @@ export const webSiteJsonLd = {
   "@context": "https://schema.org",
   "@type": "WebSite",
   name: SITE_NAME,
-  alternateName: "NET FOR — Notícias do Fortaleza EC",
+  alternateName: "NETFOR — Notícias do Fortaleza EC",
   url: SITE_URL,
   description:
     "Portal agregador de notícias do Fortaleza Esporte Clube: notícias, agenda de jogos, classificação, cantos da torcida e vídeos.",

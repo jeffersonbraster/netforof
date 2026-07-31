@@ -15,10 +15,10 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-line bg-background/75 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
-        <Link href="/" aria-label="NET FOR — Início" className="shrink-0">
+        <Link href="/" aria-label="NETFOR — Início" className="shrink-0">
           <Image
             src="/netfor.svg"
-            alt="NET FOR"
+            alt="NETFOR"
             width={110}
             height={30}
             priority
@@ -26,7 +26,7 @@ export function Header() {
           />
           <Image
             src="/netfor-blue.svg"
-            alt="NET FOR"
+            alt="NETFOR"
             width={110}
             height={30}
             priority

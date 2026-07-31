@@ -1,4 +1,4 @@
-const USER_AGENT = "NetForBot/1.0 (+https://netfor.club)";
+const USER_AGENT = "NetForBot/1.0 (+https://netfor.com.br)";
 const TIMEOUT_MS = 10_000;
 const MAX_RETRIES = 2;
 const MIN_INTERVAL_PER_DOMAIN_MS = 1_000;

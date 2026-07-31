@@ -1,6 +1,6 @@
-# NET FOR — Portal Agregador de Notícias do Fortaleza EC
+# NETFOR — Portal Agregador de Notícias do Fortaleza EC
 
-> Todas as notícias do Leão em um só lugar — [netfor.club](https://netfor.club)
+> Todas as notícias do Leão em um só lugar — [netfor.com.br](https://netfor.com.br)
 
 Monorepo pnpm + Turborepo:
 
@@ -53,19 +53,20 @@ Configurar em _Settings → Secrets and variables → Actions_:
 | `CLOUDFLARE_API_TOKEN`  | deploy                   | Token com permissão _Workers Scripts:Edit_ (+ KV/D1) |
 | `CLOUDFLARE_ACCOUNT_ID` | deploy                   | ID da conta (dashboard → Workers)                    |
 
-> ⚠️ **`REVALIDATE_URL` precisa apontar para uma origem que responde.** O scraper grava
-> no Neon normalmente, mas se a revalidação falhar o Worker continua servindo o cache
-> antigo e o site "congela" — foi o que aconteceu enquanto o secret apontava para
-> `netfor.club` (ainda não registrado). Enquanto o domínio não estiver no ar, use
-> `https://netfor.jejesavewords.workers.dev/api/revalidate`; troque para
-> `https://netfor.club/api/revalidate` no mesmo momento em que o Custom Domain subir.
-> Desde então uma falha de revalidação derruba a run do Actions (exit 1), em vez de
-> passar despercebida.
+> ⚠️ **`REVALIDATE_URL` precisa apontar para uma origem que responde** — hoje
+> `https://netfor.com.br/api/revalidate`. O scraper grava no Neon normalmente, mas se a
+> revalidação falhar o Worker continua servindo o cache antigo e o site "congela": foi o
+> que aconteceu em 30/07/2026, quando o secret apontava para um domínio ainda não
+> registrado. Uma falha de revalidação agora derruba a run do Actions (exit 1) em vez de
+> passar despercebida. Só troque este secret depois de confirmar que o Custom Domain
+> responde 200.
 
 ## Checklist de lançamento
 
-- [ ] Registrar `netfor.club` e apontar para o Worker (Cloudflare → Workers → Custom Domains)
-- [ ] Atualizar secret `REVALIDATE_URL` para `https://netfor.club/api/revalidate`
+- [x] Registrar `netfor.com.br` (feito em 30/07/2026)
+- [ ] Adicionar `netfor.com.br` como site na Cloudflare e apontar os nameservers no registro.br
+      (o `routes` do `wrangler.jsonc` só resolve com a zona ativa na conta)
+- [ ] Atualizar secret `REVALIDATE_URL` para `https://netfor.com.br/api/revalidate`
 - [ ] [Google Search Console](https://search.google.com/search-console): verificar domínio e enviar `sitemap.xml`
 - [ ] [Google News Publisher Center](https://publishercenter.google.com): cadastrar o portal + feed RSS (`/noticias/rss`)
 - [ ] Analytics: ativar **Cloudflare Web Analytics** (gratuito, sem cookies) no dashboard do domínio

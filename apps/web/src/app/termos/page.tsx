@@ -5,7 +5,7 @@ import { SectionTitle } from "@/components/ui/section-title";
 
 export const metadata: Metadata = {
   title: "Termos de Uso",
-  description: "Condições de uso do portal NET FOR, agregador de notícias do Fortaleza EC.",
+  description: "Condições de uso do portal NETFOR, agregador de notícias do Fortaleza EC.",
 };
 
 export default function TermosPage() {
@@ -18,7 +18,7 @@ export default function TermosPage() {
         <section className="space-y-2">
           <h2 className="font-display text-base font-bold">1. O serviço</h2>
           <p>
-            O NET FOR agrega notícias sobre o Fortaleza Esporte Clube publicadas por veículos de
+            O NETFOR agrega notícias sobre o Fortaleza Esporte Clube publicadas por veículos de
             imprensa, exibindo título, resumo, imagem e{" "}
             <strong>link para a matéria original</strong> com crédito visível à fonte. O portal é
             independente e <strong>não possui vínculo oficial com o Fortaleza EC</strong> nem com os
@@ -33,10 +33,10 @@ export default function TermosPage() {
             identificados. Marcas e escudos citados pertencem aos seus titulares. Veículos que
             desejem ajustar ou remover seu conteúdo do agregador podem contatar{" "}
             <a
-              href="mailto:contato@netfor.club"
+              href="mailto:contato@netfor.com.br"
               className="text-link underline underline-offset-4 hover:text-foreground"
             >
-              contato@netfor.club
+              contato@netfor.com.br
             </a>{" "}
             — atenderemos prontamente.
           </p>
@@ -56,7 +56,7 @@ export default function TermosPage() {
           <h2 className="font-display text-base font-bold">4. Isenção de responsabilidade</h2>
           <p>
             Informações de jogos, horários e classificação são fornecidas por fontes externas e
-            podem sofrer alterações sem aviso. O NET FOR não se responsabiliza por decisões tomadas
+            podem sofrer alterações sem aviso. O NETFOR não se responsabiliza por decisões tomadas
             com base no conteúdo exibido.
           </p>
         </section>

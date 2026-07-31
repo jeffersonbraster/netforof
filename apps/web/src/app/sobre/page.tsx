@@ -3,18 +3,18 @@ import type { Metadata } from "next";
 import { SectionTitle } from "@/components/ui/section-title";
 
 export const metadata: Metadata = {
-  title: "Sobre o NET FOR",
+  title: "Sobre o NETFOR",
   description:
-    "Conheça o NET FOR, portal que reúne as notícias do Fortaleza Esporte Clube em um só lugar, atualizado 24/7.",
+    "Conheça o NETFOR, portal que reúne as notícias do Fortaleza Esporte Clube em um só lugar, atualizado 24/7.",
 };
 
 export default function SobrePage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
-      <SectionTitle>Sobre o NET FOR</SectionTitle>
+      <SectionTitle>Sobre o NETFOR</SectionTitle>
       <div className="space-y-4 leading-relaxed">
         <p>
-          O <strong>NET FOR</strong> nasceu para resolver um problema de todo torcedor do Fortaleza:
+          O <strong>NETFOR</strong> nasceu para resolver um problema de todo torcedor do Fortaleza:
           as notícias do clube estão espalhadas em dezenas de portais. Aqui você encontra tudo em um
           só lugar — atualizado 24 horas por dia, 7 dias por semana.
         </p>
@@ -34,10 +34,10 @@ export default function SobrePage() {
         <p className="text-sm text-muted">
           Para sugestões, dicas ou informações entre em contato pelo e-mail{" "}
           <a
-            href="mailto:contato@netfor.club"
+            href="mailto:contato@netfor.com.br"
             className="text-link underline underline-offset-4 hover:text-foreground"
           >
-            contato@netfor.club
+            contato@netfor.com.br
           </a>
           .
         </p>

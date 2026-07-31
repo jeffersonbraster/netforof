@@ -8,7 +8,7 @@ const sections = [
   { href: "/classificacao", label: "Classificação" },
   { href: "/cantos-da-torcida", label: "Cantos da torcida" },
   { href: "/videos", label: "Vídeos" },
-  { href: "/sobre", label: "Sobre o NET FOR" },
+  { href: "/sobre", label: "Sobre o NETFOR" },
 ];
 
 function InstagramIcon() {
@@ -93,14 +93,14 @@ export function Footer() {
         <div className="space-y-4">
           <Image
             src="/netfor.svg"
-            alt="NET FOR"
+            alt="NETFOR"
             width={120}
             height={33}
             className="hidden dark:block"
           />
           <Image
             src="/netfor-blue.svg"
-            alt="NET FOR"
+            alt="NETFOR"
             width={120}
             height={33}
             className="dark:hidden"
@@ -113,10 +113,10 @@ export function Footer() {
           <p className="text-sm text-muted">
             Para sugestões, dicas ou informações entre em contato pelo e-mail{" "}
             <a
-              href="mailto:contato@netfor.club"
+              href="mailto:contato@netfor.com.br"
               className="text-link underline underline-offset-4 hover:text-foreground"
             >
-              contato@netfor.club
+              contato@netfor.com.br
             </a>
           </p>
         </div>
@@ -136,7 +136,7 @@ export function Footer() {
 
         <div>
           <h3 className="mb-3 font-display text-sm font-bold uppercase tracking-wide">
-            Siga o NET FOR
+            Siga o NETFOR
           </h3>
           <ul className="flex items-center gap-3">
             {socials.map((social) => (
@@ -160,7 +160,7 @@ export function Footer() {
       <div className="border-t border-line">
         <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-4 text-center text-xs text-muted sm:flex-row sm:items-center sm:justify-between sm:text-left">
           <p>
-            © <CopyrightYear /> NET FOR
+            © <CopyrightYear /> NETFOR
           </p>
           <p className="space-x-4">
             <Link href="/privacidade" className="transition-colors hover:text-foreground">

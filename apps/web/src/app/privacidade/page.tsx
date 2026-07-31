@@ -6,7 +6,7 @@ import { SectionTitle } from "@/components/ui/section-title";
 export const metadata: Metadata = {
   title: "Política de Privacidade",
   description:
-    "Como o NET FOR trata dados pessoais, cookies e publicidade, em conformidade com a LGPD.",
+    "Como o NETFOR trata dados pessoais, cookies e publicidade, em conformidade com a LGPD.",
 };
 
 export default function PrivacidadePage() {
@@ -19,13 +19,13 @@ export default function PrivacidadePage() {
         <section className="space-y-2">
           <h2 className="font-display text-base font-bold">1. Quem somos</h2>
           <p>
-            O <strong>NET FOR</strong> (netfor.club) é um portal agregador de notícias sobre o
+            O <strong>NETFOR</strong> (netfor.com.br) é um portal agregador de notícias sobre o
             Fortaleza Esporte Clube. Contato:{" "}
             <a
-              href="mailto:contato@netfor.club"
+              href="mailto:contato@netfor.com.br"
               className="text-link underline underline-offset-4 hover:text-foreground"
             >
-              contato@netfor.club
+              contato@netfor.com.br
             </a>
             .
           </p>
@@ -73,10 +73,10 @@ export default function PrivacidadePage() {
             Nos termos da Lei nº 13.709/2018 (LGPD), você pode solicitar confirmação de tratamento,
             acesso, correção ou eliminação de dados pessoais pelo e-mail{" "}
             <a
-              href="mailto:contato@netfor.club"
+              href="mailto:contato@netfor.com.br"
               className="text-link underline underline-offset-4 hover:text-foreground"
             >
-              contato@netfor.club
+              contato@netfor.com.br
             </a>
             . Responderemos no menor prazo possível.
           </p>
@@ -88,10 +88,10 @@ export default function PrivacidadePage() {
             As notícias exibidas são resumos com crédito e link para os portais originais. Imagens
             são servidas a partir das fontes creditadas. Solicitações de remoção:{" "}
             <a
-              href="mailto:contato@netfor.club"
+              href="mailto:contato@netfor.com.br"
               className="text-link underline underline-offset-4 hover:text-foreground"
             >
-              contato@netfor.club
+              contato@netfor.com.br
             </a>
             .
           </p>

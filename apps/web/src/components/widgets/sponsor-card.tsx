@@ -8,10 +8,10 @@ export function SponsorCard() {
           <span className="text-[10px] tracking-widest text-muted uppercase">Patrocínio</span>
           <p className="text-sm font-semibold">Anuncie sua marca aqui</p>
           <a
-            href="mailto:contato@netfor.club"
+            href="mailto:contato@netfor.com.br"
             className="text-xs text-link underline underline-offset-4 hover:text-foreground"
           >
-            contato@netfor.club
+            contato@netfor.com.br
           </a>
         </div>
         <div className="flex items-center gap-2 px-3 py-2">

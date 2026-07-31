@@ -6,7 +6,7 @@ import Script from "next/script";
 import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
 import { ADSENSE_CLIENT } from "@/lib/ads";
-import { JsonLd, webSiteJsonLd } from "@/lib/seo";
+import { JsonLd, SITE_NAME, SITE_URL, webSiteJsonLd } from "@/lib/seo";
 
 import "./globals.css";
 
@@ -23,10 +23,10 @@ const archivo = Archivo({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://netfor.club"),
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "NET FOR — Todas as notícias do Leão em um só lugar",
-    template: "%s | NET FOR",
+    default: `${SITE_NAME} — Todas as notícias do Leão em um só lugar`,
+    template: `%s | ${SITE_NAME}`,
   },
   description:
     "Portal agregador de notícias do Fortaleza Esporte Clube: últimas notícias, agenda de jogos, classificação, cantos da torcida e vídeos — atualizado 24/7.",
@@ -36,9 +36,9 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: "website",
-    siteName: "NET FOR",
+    siteName: SITE_NAME,
     locale: "pt_BR",
-    url: "https://netfor.club",
+    url: SITE_URL,
     images: [{ url: "/netfor-banner.jpeg", width: 1200, height: 630 }],
   },
   twitter: {

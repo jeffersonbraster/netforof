@@ -1,4 +1,4 @@
-# NET FOR — Agregador de notícias do Fortaleza EC
+# NETFOR — Agregador de notícias do Fortaleza EC
 
 ## Contexto
 
