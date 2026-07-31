@@ -94,9 +94,12 @@ Headers vão todos pelo `headers()` do `next.config.ts` — CSP, HSTS (2 anos, p
   `frame-ancestors`, `base-uri`, `form-action` e `object-src`.
 - **Ao ativar o AdSense**, liberar os domínios do Google em `script-src`/`frame-src`/
   `img-src`, senão o anúncio é bloqueado pela CSP.
-- **`/api/views` exige mesma origem** (`Origin` + `Sec-Fetch-Site`) e slug no formato
-  esperado. Isso é higiene, não autenticação: barra abuso trivial, mas **rate limit
-  por IP continua pendente** — é regra na borda da Cloudflare (o plano free permite uma).
+- **`/api/views` tem duas camadas**: mesma origem (`Origin` + `Sec-Fetch-Site`) + slug
+  no formato esperado, e **rate limit de 20/min por IP**. O rate limit é o binding
+  `ratelimits` do Worker (`VIEWS_RATE_LIMITER` no `wrangler.jsonc`), não regra de zona:
+  vive no código, sobe no deploy e não gasta a única regra de WAF do plano free.
+  O contador da Cloudflare é **aproximado** — sob concorrência deixa a rajada passar do
+  teto antes de barrar. Contém abuso sustentado, não é corte exato.
 - `postcss` e `sharp` aparecem no `pnpm audit` via Next: são build-time, não rodam no
   Worker. Só somem quando o Next atualizar as transitivas.
 

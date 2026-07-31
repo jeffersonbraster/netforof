@@ -1,4 +1,5 @@
 import { eq, sql } from "@netfor/db";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 import { articles, articleViews } from "@netfor/db";
 
@@ -18,9 +19,8 @@ function todayInFortaleza(): string {
  * mas cada requisição custa um SELECT e um UPSERT no Neon. Sem nenhum filtro,
  * um laço de curl inflava as "mais lidas" e queimava cota de banco.
  *
- * Não é autenticação — é higiene: exige que a chamada tenha vindo do próprio
- * site, o que já descarta abuso trivial de fora. Rate limit de verdade, por IP,
- * é regra na borda da Cloudflare (o plano free permite uma).
+ * Duas camadas: origem (higiene, barra abuso trivial de fora) e rate limit por
+ * IP (o teto de verdade, que vale mesmo para quem forja os cabeçalhos).
  */
 function veioDoProprioSite(request: Request): boolean {
   // Enviado por todo navegador atual; ausente em curl/script simples.
@@ -39,9 +39,44 @@ function veioDoProprioSite(request: Request): boolean {
 
 const SLUG_VALIDO = /^[a-z0-9-]{1,200}$/;
 
+/**
+ * Teto por IP. `cf-connecting-ip` é preenchido pela Cloudflare e não é forjável
+ * pelo cliente — ao contrário de `x-forwarded-for`, que qualquer um manda.
+ *
+ * O contador da Cloudflare é aproximado: sob concorrência ele fica atrás, e uma
+ * rajada passa do teto antes de começar a barrar (medido em produção: 40
+ * simultâneas com limite de 20/min deixaram 35 passar). Serve para conter abuso
+ * sustentado, não como corte exato.
+ *
+ * Falso positivo é aceitável aqui: atrás de CGNAT de operadora móvel muita gente
+ * divide o mesmo IP, mas o custo é uma leitura não contabilizada — o ViewTracker
+ * ignora erro em silêncio e nada na navegação quebra.
+ *
+ * Se o binding não existir (dev local sem proxy), libera: o contador é métrica
+ * best-effort, não vale derrubar a rota por causa dele.
+ */
+async function dentroDoLimite(request: Request): Promise<boolean> {
+  const ip = request.headers.get("cf-connecting-ip");
+  if (!ip) return true;
+
+  try {
+    const { env } = getCloudflareContext();
+    const limitador = env.VIEWS_RATE_LIMITER;
+    if (!limitador) return true;
+    const { success } = await limitador.limit({ key: ip });
+    return success;
+  } catch {
+    return true;
+  }
+}
+
 export async function POST(request: Request) {
   if (!veioDoProprioSite(request)) {
     return Response.json({ error: "origem inválida" }, { status: 403 });
+  }
+
+  if (!(await dentroDoLimite(request))) {
+    return Response.json({ error: "muitas requisições" }, { status: 429 });
   }
 
   const body = (await request.json().catch(() => ({}))) as { slug?: unknown };
