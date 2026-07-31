@@ -63,9 +63,12 @@ Configurar em _Settings → Secrets and variables → Actions_:
 
 ## Checklist de lançamento
 
-- [x] Registrar `netfor.com.br` (feito em 30/07/2026)
-- [ ] Adicionar `netfor.com.br` como site na Cloudflare e apontar os nameservers no registro.br
-      (o `routes` do `wrangler.jsonc` só resolve com a zona ativa na conta)
+- [x] Registrar `netfor.com.br` (30/07/2026) e delegar os nameservers do registro.br
+      para a Cloudflare — zona ativa em 31/07/2026
+- [x] Custom Domain do Worker (`netfor.com.br` + `www`) com certificado emitido
+- [x] Email Routing: `contato@netfor.com.br` → Gmail do dono. Atenção: o registro.br
+      cria um *null MX* (`MX .`) e `SPF -all` por padrão, que bloqueiam o endereço
+      publicado no site; ambos precisam ser removidos antes de habilitar
 - [ ] Atualizar secret `REVALIDATE_URL` para `https://netfor.com.br/api/revalidate`
 - [ ] [Google Search Console](https://search.google.com/search-console): verificar domínio e enviar `sitemap.xml`
 - [ ] [Google News Publisher Center](https://publishercenter.google.com): cadastrar o portal + feed RSS (`/noticias/rss`)
