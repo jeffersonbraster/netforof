@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
+import { SectionTitle } from "@/components/ui/section-title";
 import { getChantBySlug, getChants } from "@/modules/chants/queries";
 
 type Params = Promise<{ slug: string }>;
@@ -18,8 +19,10 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   if (!chant) return { title: "Canto não encontrado" };
   return {
     alternates: { canonical: `/cantos-da-torcida/${slug}` },
-    title: `${chant.title} — Letra`,
-    description: `Letra de "${chant.title}" — ${chant.category === "hino" ? "hino" : "canto da torcida"} do Fortaleza Esporte Clube.`,
+    title: `${chant.title} — Letra e vídeo`,
+    description: `Assista e acompanhe a letra de "${chant.title}", ${
+      chant.category === "hino" ? "hino" : "canto da torcida"
+    } do Fortaleza Esporte Clube.`,
   };
 }
 
@@ -28,33 +31,81 @@ export default async function ChantPage({ params }: { params: Params }) {
   const chant = await getChantBySlug(slug);
   if (!chant) notFound();
 
+  const outros = (await getChants()).filter((c) => c.slug !== slug).slice(0, 6);
+  const versos = chant.lyrics.split("\n").map((v) => v.trim());
+
   return (
-    <article className="mx-auto max-w-2xl px-4 py-8">
-      <div className="mb-3">
-        <Badge variant={chant.category === "hino" ? "category" : "neutral"}>{chant.category}</Badge>
-      </div>
-      <h1 className="font-display text-2xl leading-tight font-extrabold sm:text-3xl">
-        {chant.title}
-      </h1>
+    <div className="mx-auto max-w-5xl px-4 py-8">
+      <Link href="/cantos-da-torcida" className="text-sm text-link hover:underline">
+        ← Todos os cantos
+      </Link>
 
-      <div className="mt-6 rounded-xl border border-line bg-surface p-6">
-        <p className="text-lg leading-loose whitespace-pre-line">{chant.lyrics}</p>
+      <div className="mt-3 mb-6 flex flex-wrap items-center gap-3">
+        <h1 className="font-display text-3xl leading-none font-extrabold tracking-tight uppercase sm:text-5xl">
+          {chant.title}
+        </h1>
+        <Badge variant={chant.category === "hino" ? "live" : "neutral"}>
+          {chant.category === "hino" ? "Hino" : "Canto"}
+        </Badge>
       </div>
 
-      {chant.audioUrl && (
-        <audio controls src={chant.audioUrl} className="mt-6 w-full">
-          Seu navegador não suporta áudio.
-        </audio>
+      {/* Vídeo e letra lado a lado no desktop: dá para cantar acompanhando sem
+          rolar a página. No celular empilha, com o vídeo primeiro. */}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+        {chant.videoId ? (
+          <div className="relative aspect-video overflow-hidden rounded-[--radius-card] border border-line bg-black">
+            <iframe
+              // `loading="lazy"` e sem autoplay: o player é pesado e som
+              // automático é hostil.
+              src={`https://www.youtube-nocookie.com/embed/${chant.videoId}?rel=0`}
+              title={`Vídeo — ${chant.title}`}
+              loading="lazy"
+              allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              className="absolute inset-0 size-full"
+            />
+          </div>
+        ) : (
+          <p className="rounded-[--radius-card] border border-line bg-surface p-6 text-sm text-muted">
+            Esta faixa ainda não tem vídeo. A letra segue ao lado.
+          </p>
+        )}
+
+        <div className="rounded-[--radius-card] border border-line bg-surface p-5">
+          <h2 className="font-display mb-3 text-sm font-bold tracking-widest text-muted uppercase">
+            Letra
+          </h2>
+          <div className="space-y-1 text-lg leading-relaxed">
+            {versos.map((verso, i) =>
+              verso === "" ? (
+                <div key={i} className="h-3" aria-hidden />
+              ) : (
+                <p key={i}>{verso}</p>
+              ),
+            )}
+          </div>
+        </div>
+      </div>
+
+      {outros.length > 0 && (
+        <section aria-label="Outros cantos" className="mt-12">
+          <SectionTitle href="/cantos-da-torcida" linkLabel="Ver todos">
+            Cante também
+          </SectionTitle>
+          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {outros.map((outro) => (
+              <li key={outro.id}>
+                <Link
+                  href={`/cantos-da-torcida/${outro.slug}`}
+                  className="font-display block rounded-[--radius-card] border border-line bg-surface px-4 py-3 font-bold transition-colors hover:border-primary hover:text-primary-text"
+                >
+                  {outro.title}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
-
-      <p className="mt-8">
-        <Link
-          href="/cantos-da-torcida"
-          className="text-sm text-link hover:underline underline-offset-4"
-        >
-          ← Todos os cantos
-        </Link>
-      </p>
-    </article>
+    </div>
   );
 }

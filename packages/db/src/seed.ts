@@ -3,6 +3,9 @@ import { config } from "dotenv";
 config({ path: "../../.env" });
 
 import { createDb } from "./client";
+import { sql } from "drizzle-orm";
+
+import { CANTOS, capaDoYoutube } from "./data/cantos";
 import { articles, chants, sources } from "./schema";
 
 async function seed() {
@@ -59,44 +62,35 @@ async function seed() {
     ])
     .onConflictDoNothing({ target: articles.originalUrl });
 
-  await db
-    .insert(chants)
-    .values([
-      {
-        title: "Hino do Fortaleza Esporte Clube",
-        slug: "hino-do-fortaleza-esporte-clube",
-        lyrics:
-          "Fortaleza querido, Fortaleza adorado\n" +
-          "És o clube do povo, do povo o clube amado\n" +
-          "Tuas cores tricolores são o nosso orgulho\n" +
-          "Vermelho, azul e branco, paixão do Ceará",
-        category: "hino",
-        order: 1,
-      },
-      {
-        title: "Avante Leão",
-        slug: "avante-leao",
-        lyrics:
-          "Avante Leão, avante Leão\n" +
-          "A torcida tricolor te empurra com o coração\n" +
-          "No Castelão lotado, o canto não vai parar\n" +
-          "Fortaleza, Fortaleza, vamos juntos ao ataque",
-        category: "canto",
-        order: 2,
-      },
-      {
-        title: "Sou Tricolor de Aço",
-        slug: "sou-tricolor-de-acao",
-        lyrics:
-          "Sou tricolor de aço, sou de tanto amor\n" +
-          "Onde o Leão jogar, estarei eu com meu tambor\n" +
-          "Não importa a distância, nem o resultado\n" +
-          "Fortaleza do meu coração, sempre ao teu lado",
-        category: "canto",
-        order: 3,
-      },
-    ])
-    .onConflictDoNothing({ target: chants.slug });
+  // Catálogo curado vive em ./data/cantos.ts, mantido à mão. Só entra faixa com
+  // letra preenchida — seed sem letra criaria página vazia no site.
+  const cantosComLetra = CANTOS.filter((c) => c.lyrics.trim().length > 0);
+  if (cantosComLetra.length > 0) {
+    await db
+      .insert(chants)
+      .values(
+        cantosComLetra.map((c) => ({
+          title: c.title,
+          slug: c.slug,
+          lyrics: c.lyrics.trim(),
+          category: c.category,
+          videoId: c.videoId,
+          imageUrl: c.imageUrl ?? capaDoYoutube(c.videoId),
+          order: c.order,
+        })),
+      )
+      .onConflictDoUpdate({
+        target: chants.slug,
+        set: {
+          videoId: sql`excluded.video_id`,
+          imageUrl: sql`excluded.image_url`,
+          lyrics: sql`excluded.lyrics`,
+          order: sql`excluded."order"`,
+        },
+      });
+  } else {
+    console.warn("⚠️  Nenhum canto com letra preenchida em src/data/cantos.ts — nada inserido.");
+  }
 
   const totals = {
     sources: (await db.select().from(sources)).length,

@@ -37,6 +37,9 @@ const CF_ANALYTICS_BEACON = "https://cloudflareinsights.com";
  * lugar do anúncio, sem erro visível. Sem `NEXT_PUBLIC_ADSENSE_CLIENT` nada é
  * carregado, então liberar aqui não abre superfície nenhuma hoje.
  */
+/** Player dos cantos. Sem isto na CSP o iframe é bloqueado sem erro visível. */
+const YOUTUBE = ["https://www.youtube-nocookie.com", "https://www.youtube.com"];
+
 const ADSENSE = [
   "https://pagead2.googlesyndication.com",
   "https://*.googlesyndication.com",
@@ -61,7 +64,7 @@ const CSP = [
   // Imagens vêm dos portais agregados; o otimizador do Next serve como data:/blob:
   "img-src 'self' data: blob: https:",
   // Anúncio é servido dentro de iframe do Google.
-  `frame-src 'self' ${ADSENSE.join(" ")}`,
+  `frame-src 'self' ${ADSENSE.join(" ")} ${YOUTUBE.join(" ")}`,
   "font-src 'self' data:",
   `connect-src 'self' ${CF_ANALYTICS_SCRIPT} ${CF_ANALYTICS_BEACON} ${ADSENSE.join(" ")}`,
   "frame-ancestors 'none'",

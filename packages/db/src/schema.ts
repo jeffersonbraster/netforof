@@ -136,6 +136,10 @@ export const chants = pgTable("chants", {
   lyrics: text("lyrics").notNull(),
   category: chantCategoryEnum("category").notNull(),
   audioUrl: text("audio_url"),
+  /** ID do vídeo no YouTube — o player só é montado quando existe. */
+  videoId: text("video_id"),
+  /** Capa da lista. Nulo cai no banner do NETFOR. */
+  imageUrl: text("image_url"),
   order: integer("order").notNull().default(0),
 });
 
