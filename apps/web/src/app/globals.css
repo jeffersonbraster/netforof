@@ -1,10 +1,18 @@
+/* Hallmark · genre: editorial · design-system: design.md · designed-as-app
+ * macrostructure: Ecosystem Index (home) · Index-First (listagem) · Long Document (matéria)
+ * nav: N6 masthead · footer: Ft5 statement
+ * theme: custom — tricolor do Fortaleza (vermelho #e11d2e / azul #003da5)
+ * display: Barlow Condensed 700/800 roman · body: Inter
+ * axes: light+dark / display-condensed / warm+cool
+ * enrichment: none — tipografia carrega
+ */
 @import "tailwindcss";
 
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 :root {
   --background: #f5f6fa;
-  --surface: #ffffff;
+  --surface: #fdfdff;
   --surface-2: #edf0f6;
   --line: #dfe4ee;
   --foreground: #10141f;
@@ -71,8 +79,31 @@
   padding-left: 0.625rem;
 }
 
+html,
+body {
+  /* `clip` e não `hidden`: `hidden` cria contexto de rolagem e quebra
+     `position: sticky` nos filhos. Impede rolagem horizontal em telas estreitas
+     sem esse efeito colateral. */
+  overflow-x: clip;
+}
+
 html {
   scroll-behavior: smooth;
+}
+
+/* Manchete condensada com palavra longa (nome de clube composto, URL colada)
+   estoura a caixa em 320 px. `anywhere` permite quebrar dentro da palavra;
+   `min-width: 0` deixa o item de grid encolher abaixo do conteúdo. */
+.font-display {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+/* Maiúscula não tem descendente: com line-height 1.0 o topo das capitais da
+   segunda linha encosta na base da primeira quando o título quebra. Piso 1.02
+   nos títulos de seção em caixa alta. */
+.font-display.uppercase {
+  line-height: 1.04;
 }
 
 /* WCAG 2.4.7: o anel padrão do navegador é fino e escuro, praticamente

@@ -61,7 +61,7 @@ export default async function Home() {
             "destaques": mostra a manchete e pronto. */}
         {hero && (
           <section aria-label="Manchete">
-            <div className="grid items-stretch gap-5 lg:grid-cols-[1.6fr_1fr]">
+            <div className="grid items-stretch gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
               <HeroCard article={hero} />
               {secondary.length > 0 && (
                 <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-1">
@@ -81,7 +81,7 @@ export default async function Home() {
       <div className="mx-auto max-w-6xl space-y-10 px-4 py-8">
         <AdSlot format="leaderboard" />
 
-        <div className="grid gap-10 lg:grid-cols-[1fr_320px]">
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_320px]">
           <section aria-label="Últimas notícias">
             <SectionTitle href="/noticias">Últimas Notícias</SectionTitle>
             <div className="grid gap-4 sm:grid-cols-2">

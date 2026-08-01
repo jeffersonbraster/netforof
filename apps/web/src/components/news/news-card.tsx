@@ -59,7 +59,7 @@ export function NewsCard({ article }: { article: ArticleCard }) {
  */
 export function HeroCard({ article }: { article: ArticleCard }) {
   return (
-    <article className="group flex h-full flex-col overflow-hidden rounded-[--radius-card] border border-line border-l-[3px] border-l-primary bg-surface">
+    <article className="group flex h-full flex-col overflow-hidden rounded-[--radius-card] border border-line bg-surface transition-colors hover:border-primary">
       <Link href={`/noticias/${article.slug}`} className="flex h-full flex-col">
         <div className="relative aspect-video overflow-hidden">
           <CardImage article={article} sizes="(max-width: 1024px) 100vw, 720px" priority />
