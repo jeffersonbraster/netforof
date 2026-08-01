@@ -17,6 +17,12 @@ jobs:
   scrape:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # No nível do job porque `env` de um step não é visível no `if` do próprio
+    # step — e `secrets` não pode ser lido direto em `if`. Assim a reescrita é
+    # pulada com aviso enquanto o segredo não existir, em vez de quebrar a
+    # coleta.
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
     steps:
       - uses: actions/checkout@v4
 
@@ -36,3 +42,27 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           REVALIDATE_SECRET: ${{ secrets.REVALIDATE_SECRET }}
           REVALIDATE_URL: ${{ secrets.REVALIDATE_URL }}
+
+      # Sem esta etapa a coleta enche a fila de rascunhos e NADA é publicado —
+      # foi o que aconteceu: 27 matérias paradas e nenhuma publicação nova.
+      # A coleta só grava título/link; é a reescrita que produz o texto próprio,
+      # e sem texto próprio a página não é indexável (Modo B).
+      #
+      # `continue-on-error`: falha de reescrita não pode derrubar a coleta, que
+      # já terminou com sucesso neste ponto. A matéria fica em rascunho e volta
+      # na próxima rodada.
+      #
+      # REWRITE_BATCH baixo de propósito — é a única etapa que custa dinheiro
+      # (chamada de IA). 5 por rodada × 16 rodadas cobre folgado as ~12
+      # matérias/dia que os portais publicam, sem risco de conta inesperada.
+      - name: Reescrever matérias pendentes
+        if: env.OPENAI_API_KEY != ''
+        continue-on-error: true
+        run: pnpm --filter @netfor/scraper rewrite
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          REWRITE_BATCH: "5"
+
+      - name: Avisar que a reescrita foi pulada
+        if: env.OPENAI_API_KEY == ''
+        run: echo "::warning::OPENAI_API_KEY ausente — matérias ficam em rascunho e nada é publicado."

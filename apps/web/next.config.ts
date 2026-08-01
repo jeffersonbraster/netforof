@@ -119,6 +119,27 @@ const nextConfig: NextConfig = {
      */
     maxPostponedStateSize: "16mb",
   },
+  /**
+   * Perfil da página de matéria.
+   *
+   * Matéria publicada é imutável na prática: o pipeline insere com
+   * `onConflictDoNothing` e edição depois da aprovação é rara — e quando
+   * acontece, o painel revalida a tag `article-<slug>` daquela matéria, sem
+   * depender do tempo. Então não há motivo para reescrever essa entrada de
+   * cache a cada dia: 30 dias derruba a escrita no KV sem nenhum custo
+   * editorial.
+   *
+   * `stale` fica em 1h porque é o que o router do cliente guarda em memória; não
+   * gera escrita. `expire` vai a 60 dias para que a entrada nunca precise de um
+   * refetch bloqueante logo depois da revalidação.
+   */
+  cacheLife: {
+    materia: {
+      stale: 3600,
+      revalidate: 2_592_000,
+      expire: 5_184_000,
+    },
+  },
   // Não anunciar a stack: reduz o custo de mapear alvo por versão.
   poweredByHeader: false,
   async headers() {

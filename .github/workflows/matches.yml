@@ -2,11 +2,16 @@ name: Sync de jogos e classificação
 
 on:
   schedule:
-    # 3x/dia (horários UTC — 09h, 18h e 00h de Fortaleza)
-    # A cada 15 min: 3x/dia não acompanha placar em dia de jogo. O GitHub
-    # estrangula cron em repositório público, então na prática cai para ~30-60
-    # min — ainda muito melhor que 8 horas. O painel serve de reforço manual.
-    - cron: "*/15 * * * *"
+    # A cada 30 min. O GitHub estrangula cron em repositório público, então na
+    # prática cai para ~30-60 min — suficiente para acompanhar placar sem ficar
+    # cutucando o banco. Era */15, mas cada execução acorda o compute do Neon e
+    # ele só suspende após 5 min ocioso: dobrar o intervalo corta pela metade as
+    # horas de compute, que é o recurso escasso do plano free. O painel e o
+    # workflow_dispatch servem de reforço manual em dia de jogo.
+    #
+    # Desde que o sync passou a revalidar só quando algo muda de fato, rodada
+    # sem novidade não custa mais nada de cache.
+    - cron: "*/30 * * * *"
   workflow_dispatch:
 
 concurrency:

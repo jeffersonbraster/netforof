@@ -173,11 +173,16 @@ export async function getArticleBySlug(slug: string): Promise<ArticleDetail | nu
  * Já vem com o slug validado por `getArticleBySlug`. Chamar direto (sem passar
  * pelo porteiro) é proposital em escopo cacheado: `getPublishedSlugs` carrega a
  * tag `articles`, que vazaria para a entrada externa e desfaria tudo isto.
+ *
+ * 30 dias (perfil `materia`) em vez de "days": o conteúdo não muda depois de
+ * aprovado, e quem edita pelo painel revalida `article-<slug>` na hora. O bloco
+ * de recirculação, que É atualizado, foi tirado daqui de propósito — ver
+ * `getRecirculacao`.
  */
 export async function getArticleDetail(slug: string): Promise<ArticleDetail | null> {
   "use cache";
   cacheTag(`article-${slug}`);
-  cacheLife("days");
+  cacheLife("materia");
 
   const [row] = await db
     .select({
@@ -262,6 +267,13 @@ export async function getDestaquesDoDia(limite = 4): Promise<ArticleCard[]> {
  * Mistura deliberada: primeiro as da MESMA categoria (quem leu sobre mercado
  * quer mais mercado), completando com as mais recentes. Só categoria produz
  * fundo de poço em categoria pequena; só recência ignora o interesse demonstrado.
+ *
+ * É a ÚNICA parte da página de matéria que continua se atualizando, e por isso
+ * precisa ser renderizada fora do escopo cacheado do corpo da matéria. A regra
+ * do Next: quando um `use cache` com `cacheLife` explícito envolve outro, o de
+ * fora vence e congela o de dentro junto — chamada aqui de dentro do corpo, a
+ * recirculação ficaria presa nos mesmos 30 dias. Ver o `<Suspense>` irmão em
+ * `app/noticias/[slug]/page.tsx`.
  */
 export async function getRecirculacao(
   slugAtual: string,

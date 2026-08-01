@@ -133,9 +133,39 @@ async function coletarEventos(): Promise<EspnEvent[]> {
   return eventos;
 }
 
-async function syncMatches(db: Db): Promise<number> {
+/**
+ * Compara só o que a UI mostra. `undefined` vs `null` e Date vs Date exigem
+ * normalização — sem isso toda comparação daria "mudou" e o guarda não serviria
+ * para nada.
+ */
+function mesmoJogo(atual: Record<string, unknown>, novo: Record<string, unknown>): boolean {
+  return Object.keys(novo).every((chave) => {
+    const a = atual[chave];
+    const b = novo[chave];
+    if (a instanceof Date || b instanceof Date) {
+      return new Date(a as string).getTime() === new Date(b as string).getTime();
+    }
+    return (a ?? null) === (b ?? null);
+  });
+}
+
+/**
+ * Retorna quantos jogos vieram da ESPN e se ALGUM deles mudou de fato.
+ *
+ * O "mudou" é o que importa: este job roda de 15 em 15 minutos e antes
+ * revalidava a tag `matches` em toda execução. Como `getProximoJogo()` vive no
+ * layout raiz, cada revalidação dessas invalidava o cache de TODAS as páginas —
+ * 96 vezes por dia, quase sempre sem nenhum placar novo. Era o maior consumidor
+ * de escrita no KV e o motivo de o Neon nunca chegar a suspender.
+ */
+async function syncMatches(db: Db): Promise<{ total: number; mudou: boolean }> {
   const events = await coletarEventos();
   let synced = 0;
+  let mudou = false;
+
+  const existentes = new Map(
+    (await db.select().from(matches)).map((linha) => [linha.externalId, linha]),
+  );
 
   for (const event of events) {
     const externalId = Number(event.id);
@@ -163,22 +193,29 @@ async function syncMatches(db: Db): Promise<number> {
       status,
     };
 
+    synced++;
+
+    // Escreve só o que mudou: poupa write no Neon e, principalmente, evita
+    // acordar a revalidação sem motivo.
+    const atual = existentes.get(externalId);
+    if (atual && mesmoJogo(atual as unknown as Record<string, unknown>, values)) continue;
+
+    mudou = true;
     await db
       .insert(matches)
       .values({ externalId, ...values })
       .onConflictDoUpdate({ target: matches.externalId, set: values });
-    synced++;
   }
 
-  return synced;
+  return { total: synced, mudou };
 }
 
-async function syncStandings(db: Db): Promise<number> {
+async function syncStandings(db: Db): Promise<{ total: number; mudou: boolean }> {
   const data = await fetchJson<EspnStandingsResponse>(STANDINGS_URL);
   const entries = data.children?.[0]?.standings?.entries ?? [];
   if (entries.length === 0) {
     console.warn("⚠️  Classificação vazia — verificar endpoint da ESPN.");
-    return 0;
+    return { total: 0, mudou: false };
   }
 
   const rows = entries.flatMap((entry) => {
@@ -204,33 +241,58 @@ async function syncStandings(db: Db): Promise<number> {
   });
 
   // Substituição total: a tabela é pequena e o estado é sempre o snapshot atual
+  const anteriores = new Map((await db.select().from(standings)).map((l) => [l.position, l]));
+  let mudou = false;
+
   for (const row of rows) {
+    // `updatedAt` fica de fora da comparação: é carimbo de execução, mudaria
+    // sempre e faria toda rodada parecer que a tabela virou.
+    const { updatedAt: _ignorado, ...comparavel } = row;
+    const atual = anteriores.get(row.position);
+    if (
+      atual &&
+      mesmoJogo(atual as unknown as Record<string, unknown>, comparavel as Record<string, unknown>)
+    ) {
+      continue;
+    }
+
+    mudou = true;
     await db
       .insert(standings)
       .values(row)
       .onConflictDoUpdate({ target: standings.position, set: row });
   }
+
   // Remove posições que deixaram de existir (ex.: mudança de temporada)
   const maxPosition = Math.max(...rows.map((r) => r.position));
-  const all = await db.select({ position: standings.position }).from(standings);
-  for (const row of all) {
-    if (row.position > maxPosition) {
-      await db.delete(standings).where(eq(standings.position, row.position));
+  for (const [position] of anteriores) {
+    if (position > maxPosition) {
+      mudou = true;
+      await db.delete(standings).where(eq(standings.position, position));
     }
   }
 
-  return rows.length;
+  return { total: rows.length, mudou };
 }
 
 async function main() {
   const startedAt = Date.now();
   const db = createDb();
 
-  const [matchCount, standingCount] = await Promise.all([syncMatches(db), syncStandings(db)]);
-  if (!(await notifyRevalidate(["matches", "standings"]))) process.exitCode = 1;
+  const [jogos, tabela] = await Promise.all([syncMatches(db), syncStandings(db)]);
+
+  // Revalida só a tag que mudou. Sem nada novo, não toca no cache — e é esse o
+  // caso na esmagadora maioria das rodadas, já que o job roda a cada 15 min mas
+  // placar só muda em dia de jogo.
+  const tags = [...(jogos.mudou ? ["matches"] : []), ...(tabela.mudou ? ["standings"] : [])];
+  if (tags.length > 0) {
+    if (!(await notifyRevalidate(tags))) process.exitCode = 1;
+  } else {
+    console.log("↷ Nada mudou — cache preservado.");
+  }
 
   console.log(
-    `Sync de jogos concluído em ${((Date.now() - startedAt) / 1000).toFixed(1)}s — ${matchCount} jogos, ${standingCount} posições na tabela.`,
+    `Sync de jogos concluído em ${((Date.now() - startedAt) / 1000).toFixed(1)}s — ${jogos.total} jogos, ${tabela.total} posições na tabela.`,
   );
 }
 
