@@ -27,10 +27,19 @@ const PALAVROES = [
 ];
 
 /**
- * Ataque por orientação sexual. Mascarar NÃO resolve — a função marca a faixa
- * para decisão humana em vez de fingir que sanitizou.
+ * Ataque por orientação sexual.
+ *
+ * Tratamento: descartar o VERSO inteiro, não a palavra.
+ *
+ * Máscara e remoção por token foram testadas e falham. "Cearagay" mascarado vira
+ * `C*******y`, legível. Removido, sobra "A é gay, é gay!" — o ataque continua
+ * inteiro, agora sem nem o alvo nomeado. E quando o termo está no meio da frase,
+ * o verso vira fragmento sem sentido.
+ *
+ * A unidade que carrega o ataque é a frase, então é a frase que sai. O áudio do
+ * vídeo é conteúdo do YouTube; o que responde por nós é a letra escrita.
  */
-const ATAQUES = ["cearagay", "ceara gay", "ceará gay", "cearagai"];
+const ATAQUES = ["cearagay", "ceara gay", "ceará gay", "cearagai", "ceara gai"];
 
 function normalizar(t: string): string {
   return t.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
@@ -45,20 +54,42 @@ function mascara(palavra: string): string {
 export interface ResultadoDaMascara {
   texto: string;
   palavroesMascarados: string[];
-  /** Termos de ataque encontrados — exigem decisão editorial, não máscara. */
-  ataquesEncontrados: string[];
+  /** Termos de ataque removidos do texto publicado. */
+  ataquesRemovidos: string[];
+  /** Versos inteiros descartados por conterem o ataque. */
+  versosDescartados: number;
+}
+
+/**
+ * Descarta o verso inteiro que contém o termo. Ver a nota em ATAQUES sobre por
+ * que remoção por palavra não serve.
+ */
+function descartarVersos(texto: string, termos: string[]): { texto: string; descartados: number } {
+  let descartados = 0;
+
+  const mantidas = texto.split("\n").filter((linha) => {
+    const alvo = normalizar(linha);
+    const contem = termos.some((termo) => alvo.includes(normalizar(termo)));
+    if (contem) descartados++;
+    return !contem;
+  });
+
+  return { texto: mantidas.join("\n"), descartados };
 }
 
 export function tratarLetra(letra: string): ResultadoDaMascara {
   const palavroesMascarados: string[] = [];
-  const ataquesEncontrados: string[] = [];
+  const ataquesRemovidos: string[] = [];
 
   const alvo = normalizar(letra);
   for (const termo of ATAQUES) {
-    if (alvo.includes(normalizar(termo))) ataquesEncontrados.push(termo);
+    if (alvo.includes(normalizar(termo))) ataquesRemovidos.push(termo);
   }
 
-  let texto = letra;
+  const semAtaques =
+    ataquesRemovidos.length > 0 ? descartarVersos(letra, ATAQUES) : { texto: letra, descartados: 0 };
+
+  let texto = semAtaques.texto;
   for (const termo of PALAVROES) {
     // \b não funciona com acento em todos os motores; a borda é feita à mão.
     const re = new RegExp(`(^|[^\\p{L}])(${termo})([^\\p{L}]|$)`, "giu");
@@ -68,7 +99,12 @@ export function tratarLetra(letra: string): ResultadoDaMascara {
     });
   }
 
-  return { texto, palavroesMascarados, ataquesEncontrados };
+  return {
+    texto,
+    palavroesMascarados,
+    ataquesRemovidos,
+    versosDescartados: semAtaques.descartados,
+  };
 }
 
 /** Normaliza a indentação que vem de template literal no arquivo de dados. */

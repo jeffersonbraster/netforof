@@ -75,11 +75,10 @@ async function seed() {
     if (r.palavroesMascarados.length > 0) {
       console.log(`  ✎ ${canto.slug}: mascarado ${[...new Set(r.palavroesMascarados)].join(", ")}`);
     }
-    if (r.ataquesEncontrados.length > 0) {
+    if (r.ataquesRemovidos.length > 0) {
       console.warn(
-        `  ⚠️  ${canto.slug}: contém ataque por orientação sexual (${r.ataquesEncontrados.join(", ")}).\n` +
-          "     Máscara NÃO resolve isto — alvo e intenção seguem legíveis, e a\n" +
-          "     revisão do AdSense em recurso é humana. Decisão editorial necessária.",
+        `  ✂ ${canto.slug}: removido do texto publicado — ${r.ataquesRemovidos.join(", ")}` +
+          (r.versosDescartados > 0 ? ` (${r.versosDescartados} verso[s] descartado[s])` : ""),
       );
     }
   }
