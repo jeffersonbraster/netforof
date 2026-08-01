@@ -4,6 +4,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import { MatchTicker } from "@/components/matches/match-ticker";
 import { DestaquesDoDia } from "@/components/news/destaques-do-dia";
 import { HeroCard, NewsCard } from "@/components/news/news-card";
+import { SpotlightCard } from "@/components/news/spotlight-card";
 import { ButtonLink } from "@/components/ui/button";
 import { SectionTitle } from "@/components/ui/section-title";
 import { AdSlot } from "@/components/widgets/ad-slot";
@@ -65,7 +66,7 @@ export default async function Home() {
               {secondary.length > 0 && (
                 <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-1">
                   {secondary.map((article) => (
-                    <NewsCard key={article.id} article={article} />
+                    <SpotlightCard key={article.id} article={article} />
                   ))}
                 </div>
               )}

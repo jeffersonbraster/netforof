@@ -120,7 +120,7 @@ export function Footer() {
           width={320}
           height={320}
           aria-hidden
-          className="pointer-events-none absolute -right-10 -bottom-6 w-48 opacity-[0.07] select-none sm:w-72 dark:opacity-[0.12]"
+          className="pointer-events-none absolute right-0 bottom-0 h-full w-auto max-w-[45%] object-contain object-right-bottom opacity-[0.07] select-none dark:opacity-[0.12]"
         />
         <p className="font-display relative max-w-3xl text-4xl leading-[1.05] font-extrabold tracking-tight uppercase sm:text-6xl">
           Todas as notícias do <span className="text-primary-text">Leão</span> em um só lugar.

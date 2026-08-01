@@ -64,7 +64,7 @@ export function HeroCard({ article }: { article: ArticleCard }) {
         <div className="relative aspect-video overflow-hidden">
           <CardImage article={article} sizes="(max-width: 1024px) 100vw, 720px" priority />
         </div>
-        <div className="flex flex-1 flex-col gap-2 p-5">
+        <div className="flex flex-col gap-2 p-5">
           {article.category && (
             <div>
               <Badge variant="category">{article.category}</Badge>
@@ -74,9 +74,7 @@ export function HeroCard({ article }: { article: ArticleCard }) {
             {article.title}
           </h2>
           <p className="line-clamp-3 max-w-2xl leading-relaxed text-muted">{article.excerpt}</p>
-          <p className="mt-auto pt-2 text-xs text-muted">
-            {formatShortDateTime(article.publishedAt)}
-          </p>
+          <p className="text-xs text-muted">{formatShortDateTime(article.publishedAt)}</p>
         </div>
       </Link>
     </article>
