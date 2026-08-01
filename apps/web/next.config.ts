@@ -140,6 +140,7 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "*.opovo.com.br" },
       { protocol: "https", hostname: "*.espncdn.com" },
       { protocol: "https", hostname: "media.api-sports.io" },
+      { protocol: "https", hostname: "img.youtube.com" },
     ],
   },
 };

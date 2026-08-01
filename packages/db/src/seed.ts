@@ -6,6 +6,7 @@ import { createDb } from "./client";
 import { sql } from "drizzle-orm";
 
 import { CANTOS, capaDoYoutube } from "./data/cantos";
+import { limparIndentacao, tratarLetra } from "./data/mascarar";
 import { articles, chants, sources } from "./schema";
 
 async function seed() {
@@ -66,6 +67,23 @@ async function seed() {
   // A faixa entra com o vídeo mesmo sem letra: o player já é conteúdo útil, e a
   // letra pode ser preenchida depois sem tocar em mais nada.
   const cantosComLetra = CANTOS;
+
+  // Relatório de triagem: o dono precisa VER o que foi mascarado e, sobretudo,
+  // o que a máscara não resolve.
+  for (const canto of cantosComLetra) {
+    const r = tratarLetra(limparIndentacao(canto.lyrics));
+    if (r.palavroesMascarados.length > 0) {
+      console.log(`  ✎ ${canto.slug}: mascarado ${[...new Set(r.palavroesMascarados)].join(", ")}`);
+    }
+    if (r.ataquesEncontrados.length > 0) {
+      console.warn(
+        `  ⚠️  ${canto.slug}: contém ataque por orientação sexual (${r.ataquesEncontrados.join(", ")}).\n` +
+          "     Máscara NÃO resolve isto — alvo e intenção seguem legíveis, e a\n" +
+          "     revisão do AdSense em recurso é humana. Decisão editorial necessária.",
+      );
+    }
+  }
+
   if (cantosComLetra.length > 0) {
     await db
       .insert(chants)
@@ -73,7 +91,9 @@ async function seed() {
         cantosComLetra.map((c) => ({
           title: c.title,
           slug: c.slug,
-          lyrics: c.lyrics.trim(),
+          // A máscara roda aqui, no seed: vale para faixa nova sem ninguém
+          // lembrar de aplicar, e o critério fica num lugar só.
+          lyrics: tratarLetra(limparIndentacao(c.lyrics)).texto,
           category: c.category,
           videoId: c.videoId,
           imageUrl: c.imageUrl ?? capaDoYoutube(c.videoId),
