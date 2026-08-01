@@ -115,6 +115,9 @@ const nextConfig: NextConfig = {
   images: {
     // Transformações de imagens externas ficam cacheadas por 24h no mínimo
     minimumCacheTTL: 86400,
+    // O otimizador recusa caminho local com query string sem isto declarado —
+    // e o proxy de imagem recebe a origem justamente por query.
+    localPatterns: [{ pathname: "/api/imagem", search: "**" }],
     qualities: [60, 75],
     remotePatterns: [
       // Portais agregados — liberados conforme adapters da Fase 3

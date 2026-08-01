@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 
-import { FALLBACK_IMAGE, pularOtimizador } from "@/lib/images";
+import { FALLBACK_IMAGE, urlDaImagem } from "@/lib/images";
 
 type RemoteImageProps = {
   /** URL do portal de origem; `null` cai direto no banner. */
@@ -30,16 +30,17 @@ export function RemoteImage({
 }: RemoteImageProps) {
   const [quebrou, setQuebrou] = useState(false);
   const usarFallback = !src || quebrou;
+  // Todo caminho sai pelo nosso domínio: o de terceiro nunca chega ao navegador.
+  const endereco = usarFallback ? FALLBACK_IMAGE : urlDaImagem(src);
 
   return (
     <Image
-      src={usarFallback ? FALLBACK_IMAGE : src}
+      src={endereco}
       alt={alt}
       fill
       sizes={sizes}
       priority={priority}
       quality={quality}
-      unoptimized={!usarFallback && pularOtimizador(src)}
       onError={() => setQuebrou(true)}
       className={className}
     />

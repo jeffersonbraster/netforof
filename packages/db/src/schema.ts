@@ -56,6 +56,16 @@ export const articles = pgTable(
      */
     content: text("content"),
     rewrittenAt: timestamp("rewritten_at", { withTimezone: true }),
+    /**
+     * Tentativas de reescrita já gastas nesta matéria.
+     *
+     * Sem isto, matéria que falha sempre — texto não extraível, original curto
+     * demais, portal que bloqueia — volta em toda rodada e queima chamada de IA
+     * indefinidamente. Ao atingir o teto ela vai para `hidden`, que é a lixeira:
+     * sai da fila, não é recoletada (o originalUrl é único) e continua no banco
+     * caso valha investigar.
+     */
+    rewriteAttempts: integer("rewrite_attempts").notNull().default(0),
     rewriteModel: text("rewrite_model"),
     originalUrl: text("original_url").notNull().unique(),
     imageUrl: text("image_url"),

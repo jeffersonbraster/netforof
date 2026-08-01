@@ -2,7 +2,7 @@ import { config } from "dotenv";
 
 config({ path: new URL("../../../.env", import.meta.url).pathname });
 
-import { and, articles, createDb, desc, eq, inArray, isNull, sources } from "@netfor/db";
+import { and, articles, createDb, desc, eq, inArray, isNull, lt, sql, sources } from "@netfor/db";
 
 import { extractArticleText } from "./core/extract";
 import { criarProvedor, type MateriaReescrita, type ProvedorDeReescrita } from "./rewrite";
@@ -22,6 +22,15 @@ import { checarMencaoDeVeiculo } from "./rewrite/veiculos";
  */
 
 const LOTE_PADRAO = 10;
+
+/**
+ * Tentativas antes de mandar para a lixeira.
+ *
+ * Três é o ponto de equilíbrio: cobre falha transitória (portal fora do ar,
+ * timeout) sem transformar matéria impossível — original curto demais, texto
+ * não extraível — em despesa recorrente de IA a cada rodada.
+ */
+const MAX_TENTATIVAS = 3;
 
 function paragrafosParaTexto(paragrafos: string[]): string {
   return paragrafos.join("\n\n");
@@ -90,6 +99,24 @@ async function reescreverComTrava(
   return null;
 }
 
+/**
+ * Conta a tentativa e, no limite, arquiva. `hidden` é a lixeira: fora da fila,
+ * fora do site, mas ainda no banco — o originalUrl único impede recoleta, e a
+ * linha fica para investigação.
+ */
+async function registrarFalha(db: ReturnType<typeof createDb>, id: number): Promise<void> {
+  const [linha] = await db
+    .update(articles)
+    .set({ rewriteAttempts: sql`${articles.rewriteAttempts} + 1` })
+    .where(eq(articles.id, id))
+    .returning({ tentativas: articles.rewriteAttempts });
+
+  if ((linha?.tentativas ?? 0) >= MAX_TENTATIVAS) {
+    await db.update(articles).set({ status: "hidden" }).where(eq(articles.id, id));
+    console.warn(`    → arquivada após ${MAX_TENTATIVAS} tentativas`);
+  }
+}
+
 async function main() {
   const limite = Number.parseInt(process.env.REWRITE_BATCH ?? "", 10) || LOTE_PADRAO;
   const db = createDb();
@@ -121,7 +148,13 @@ async function main() {
     })
     .from(articles)
     .innerJoin(sources, eq(articles.sourceId, sources.id))
-    .where(and(isNull(articles.content), inArray(articles.status, [...estados])))
+    .where(
+      and(
+        isNull(articles.content),
+        inArray(articles.status, [...estados]),
+        lt(articles.rewriteAttempts, MAX_TENTATIVAS),
+      ),
+    )
     .orderBy(desc(articles.publishedAt))
     .limit(limite);
 
@@ -140,6 +173,7 @@ async function main() {
     const original = await extractArticleText(materia.url);
     if (!original) {
       semTexto++;
+      await registrarFalha(db, materia.id);
       console.warn(`  ⊘ ${rotulo} — não consegui extrair o texto da fonte`);
       continue;
     }
@@ -157,7 +191,8 @@ async function main() {
 
       if (!nova) {
         reprovadas++;
-        console.error(`  ✗ ${rotulo} — reprovada na trava de originalidade nas três tentativas`);
+        await registrarFalha(db, materia.id);
+        console.error(`  ✗ ${rotulo} — reprovada nas travas`);
         continue;
       }
 
@@ -179,6 +214,7 @@ async function main() {
       console.log(`    → ${nova.titulo.slice(0, 70)} (${nova.paragrafos.length} parágrafos)`);
     } catch (erro) {
       falhou++;
+      await registrarFalha(db, materia.id);
       console.error(`  ✗ ${rotulo} — ${erro instanceof Error ? erro.message : String(erro)}`);
     }
   }

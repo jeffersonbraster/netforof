@@ -1,0 +1,1 @@
+ALTER TABLE "articles" ADD COLUMN "rewrite_attempts" integer DEFAULT 0 NOT NULL;
