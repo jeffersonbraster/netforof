@@ -32,6 +32,15 @@ const LOTE_PADRAO = 10;
  */
 const MAX_TENTATIVAS = 3;
 
+/**
+ * Mínimo de texto na matéria de origem para valer uma reescrita.
+ *
+ * Abaixo disto não há material: o que sairia seria invenção para preencher.
+ * Matéria assim vai direto para a lixeira — a IA nunca deve escrever do zero,
+ * só TRATAR material existente.
+ */
+const MIN_CHARS_ORIGEM = 700;
+
 function paragrafosParaTexto(paragrafos: string[]): string {
   return paragrafos.join("\n\n");
 }
@@ -100,9 +109,21 @@ async function reescreverComTrava(
 }
 
 /**
- * Conta a tentativa e, no limite, arquiva. `hidden` é a lixeira: fora da fila,
- * fora do site, mas ainda no banco — o originalUrl único impede recoleta, e a
- * linha fica para investigação.
+ * Lixeira. `hidden` é o estado certo: fora da fila e fora do site, mas ainda no
+ * banco — o `originalUrl` único impede recoleta e a linha fica para consulta.
+ */
+async function paraLixeira(db: ReturnType<typeof createDb>, id: number): Promise<void> {
+  await db
+    .update(articles)
+    .set({ status: "hidden", rewriteAttempts: MAX_TENTATIVAS })
+    .where(eq(articles.id, id));
+}
+
+/**
+ * Conta a tentativa e, no limite, arquiva. Vale para falha do MODELO — trava de
+ * originalidade, menção a veículo, resposta malformada — onde há material bom e
+ * repetir faz sentido. Falta de material não passa por aqui: vai direto para a
+ * lixeira.
  */
 async function registrarFalha(db: ReturnType<typeof createDb>, id: number): Promise<void> {
   const [linha] = await db
@@ -171,10 +192,17 @@ async function main() {
     const rotulo = materia.titulo.slice(0, 58);
 
     const original = await extractArticleText(materia.url);
-    if (!original) {
+
+    // Sem texto, ou com texto raso demais, vai para a lixeira NA HORA — sem
+    // tentativa, sem chamada de IA. Insistir só gastaria requisição, e gerar
+    // texto a partir do nada é exatamente o que não pode acontecer.
+    if (!original || original.texto.length < MIN_CHARS_ORIGEM) {
       semTexto++;
-      await registrarFalha(db, materia.id);
-      console.warn(`  ⊘ ${rotulo} — não consegui extrair o texto da fonte`);
+      const motivo = original
+        ? `origem com só ${original.texto.length} caracteres`
+        : "não consegui extrair o texto da fonte";
+      await paraLixeira(db, materia.id);
+      console.warn(`  🗑 ${rotulo} — ${motivo} · arquivada`);
       continue;
     }
 

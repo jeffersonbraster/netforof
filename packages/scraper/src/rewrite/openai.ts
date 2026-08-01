@@ -37,7 +37,9 @@ function validar(dados: unknown): MateriaReescrita {
 
   if (!titulo) throw new Error("título ausente");
   if (!resumo) throw new Error("resumo ausente");
-  if (paragrafos.length < 3) throw new Error(`só ${paragrafos.length} parágrafo(s)`);
+  // Piso baixo de propósito: exigir muitos parágrafos empurra o modelo a
+  // inflar. Dois parágrafos honestos valem mais que cinco com enchimento.
+  if (paragrafos.length < 2) throw new Error(`só ${paragrafos.length} parágrafo(s)`);
 
   return { titulo, resumo, paragrafos: paragrafos.map((p) => p.trim()) };
 }
