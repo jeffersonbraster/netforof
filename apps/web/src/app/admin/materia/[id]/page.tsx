@@ -176,9 +176,10 @@ async function Editor({ params, searchParams }: { params: Params; searchParams: 
       <div className="mt-4 flex flex-wrap gap-2 border-t border-line pt-4">
         {materia.estado === "published" && (
           <>
-            <form action={despublicar}>
-              <input type="hidden" name="id" value={materia.id} />
-              <input type="hidden" name="slug" value={materia.slug} />
+            {/* id e slug vão por `.bind()` — mesma assinatura usada na lista,
+                onde campo oculto não serve porque tudo vive num formulário só. */}
+            <form action={despublicar.bind(null, materia.id, materia.slug)}>
+              <input type="hidden" name="voltar" value={`/admin/materia/${materia.id}`} />
               <button
                 type="submit"
                 className="h-9 rounded-lg border border-line px-4 text-sm font-medium text-muted hover:border-primary/50"
@@ -196,9 +197,8 @@ async function Editor({ params, searchParams }: { params: Params; searchParams: 
           </>
         )}
         {materia.estado !== "review" && (
-          <form action={devolverParaRevisao}>
-            <input type="hidden" name="id" value={materia.id} />
-            <input type="hidden" name="slug" value={materia.slug} />
+          <form action={devolverParaRevisao.bind(null, materia.id, materia.slug)}>
+            <input type="hidden" name="voltar" value={`/admin/materia/${materia.id}`} />
             <button
               type="submit"
               className="h-9 rounded-lg border border-line px-4 text-sm font-medium hover:border-primary/50"

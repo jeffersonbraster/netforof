@@ -152,6 +152,17 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* O preflight do Tailwind v4 deixou de aplicar `cursor: pointer` em botão — o
+ * navegador usa a seta padrão, e o controle deixa de parecer clicável. Vale
+ * para o site inteiro, não só para o painel. `:disabled` fica de fora de
+ * propósito: cursor de mão em botão desabilitado promete algo que não acontece. */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+label[for],
+summary {
+  cursor: pointer;
+}
+
 /* Esconde scrollbar em trilhos horizontais (ticker, nav mobile) sem perder o scroll */
 .scrollbar-none {
   scrollbar-width: none;

@@ -1,6 +1,6 @@
 "use server";
 
-import { articles, eq, matches } from "@netfor/db";
+import { articles, eq, inArray, isNotNull, matches, and } from "@netfor/db";
 import { revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -34,27 +34,120 @@ function revalidar(slug: string) {
   if (slug) revalidateTag(`article-${slug}`, "max");
 }
 
-async function mudarEstado(dados: FormData, estado: "published" | "hidden" | "review") {
+type EstadoAlvo = "published" | "hidden" | "review";
+
+/**
+ * Para onde voltar depois da ação.
+ *
+ * A lista precisava de F5 para refletir a mudança: a Server Action alterava o
+ * banco e devolvia `void`, e a navegação continuava mostrando o payload
+ * anterior. Redirecionar depois de escrever (padrão POST-Redirect-GET) força
+ * uma renderização nova e resolve de vez — e ainda preserva filtro, busca e
+ * página, que um redirect fixo para "/admin" perderia.
+ *
+ * Só aceita caminho interno do painel: o valor vem do formulário, e sem esta
+ * checagem viraria redirecionamento aberto para domínio de terceiro.
+ */
+function destinoSeguro(bruto: FormDataEntryValue | null): string {
+  const valor = typeof bruto === "string" ? bruto : "";
+  return valor.startsWith("/admin") && !valor.startsWith("//") ? valor : "/admin";
+}
+
+async function aplicarEstado(ids: number[], estado: EstadoAlvo): Promise<number> {
+  if (ids.length === 0) return 0;
+
+  // Busca os slugs ANTES de mudar o estado: cada matéria tem sua própria tag de
+  // cache (`article-<slug>`), e sem elas a página no ar continuaria servindo a
+  // versão antiga por até 30 dias.
+  const alvos = await db
+    .select({ slug: articles.slug })
+    .from(articles)
+    .where(inArray(articles.id, ids));
+
+  await db.update(articles).set({ status: estado }).where(inArray(articles.id, ids));
+
+  revalidateTag("articles", "max");
+  for (const { slug } of alvos) revalidateTag(`article-${slug}`, "max");
+  return alvos.length;
+}
+
+/**
+ * Ações de um item só. Recebem id e slug por `.bind()` em vez de campo oculto
+ * porque agora a lista inteira vive dentro de UM formulário (o do lote): com
+ * campo oculto, todo item mandaria o seu e o servidor não saberia qual botão
+ * foi apertado. Formulário aninhado não é HTML válido, então bind é a saída.
+ */
+async function mudarUm(id: number, slug: string, estado: EstadoAlvo, dados: FormData) {
   await exigirSessao();
-  const id = Number(dados.get("id"));
   if (!Number.isInteger(id)) return;
 
   await db.update(articles).set({ status: estado }).where(eq(articles.id, id));
-  revalidar(String(dados.get("slug") ?? ""));
+  revalidar(slug);
+  redirect(destinoSeguro(dados.get("voltar")));
 }
 
-export async function publicar(dados: FormData): Promise<void> {
-  await mudarEstado(dados, "published");
+export async function publicar(id: number, slug: string, dados: FormData): Promise<void> {
+  await mudarUm(id, slug, "published", dados);
 }
 
 /** Tira do ar sem apagar: continua editável e pode voltar. */
-export async function despublicar(dados: FormData): Promise<void> {
-  await mudarEstado(dados, "hidden");
+export async function despublicar(id: number, slug: string, dados: FormData): Promise<void> {
+  await mudarUm(id, slug, "hidden", dados);
 }
 
 /** Devolve à fila de revisão. */
-export async function devolverParaRevisao(dados: FormData): Promise<void> {
-  await mudarEstado(dados, "review");
+export async function devolverParaRevisao(
+  id: number,
+  slug: string,
+  dados: FormData,
+): Promise<void> {
+  await mudarUm(id, slug, "review", dados);
+}
+
+function idsSelecionados(dados: FormData): number[] {
+  return dados
+    .getAll("ids")
+    .map((v) => Number(v))
+    .filter((n) => Number.isInteger(n) && n > 0);
+}
+
+/**
+ * Aprovação em lote.
+ *
+ * Publica só o que TEM texto próprio, mesmo que o operador marque tudo. Sem
+ * esse filtro, "selecionar todas" na aba de rascunho colocaria no ar matéria
+ * sem texto da casa — que é justamente o que não pode ir para o índice no
+ * Modo B. O que não passa é silenciosamente ignorado e continua na lista.
+ */
+export async function publicarSelecionadas(dados: FormData): Promise<void> {
+  await exigirSessao();
+  const ids = idsSelecionados(dados);
+  if (ids.length === 0) redirect(destinoSeguro(dados.get("voltar")));
+
+  const publicaveis = await db
+    .select({ id: articles.id })
+    .from(articles)
+    .where(and(inArray(articles.id, ids), isNotNull(articles.content)));
+
+  const quantos = await aplicarEstado(
+    publicaveis.map((a) => a.id),
+    "published",
+  );
+
+  const destino = destinoSeguro(dados.get("voltar"));
+  const separador = destino.includes("?") ? "&" : "?";
+  redirect(`${destino}${separador}lote=${quantos}&pedidas=${ids.length}`);
+}
+
+/** Tira várias do ar de uma vez. Não precisa de filtro: qualquer uma pode sair. */
+export async function despublicarSelecionadas(dados: FormData): Promise<void> {
+  await exigirSessao();
+  const ids = idsSelecionados(dados);
+  const quantos = await aplicarEstado(ids, "hidden");
+
+  const destino = destinoSeguro(dados.get("voltar"));
+  const separador = destino.includes("?") ? "&" : "?";
+  redirect(`${destino}${separador}lote=${quantos}&pedidas=${ids.length}`);
 }
 
 /**
