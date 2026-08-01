@@ -15,10 +15,27 @@
  * Proxy aberto é vetor de abuso (SSRF, roubo de banda), então: allowlist de
  * host, só https, `redirect: "manual"` para não seguir cadeia até IP interno,
  * content-type obrigatoriamente de imagem e teto de tamanho.
+ *
+ * É também a rota mais CARA do site: cada chamada dispara um fetch externo de
+ * até 8 MB e ocupa o Worker enquanto isso. Era a única sem teto por IP — num
+ * plano com orçamento fechado, é justamente a que mais precisa. Mesmo limitador
+ * de /api/views e /api/busca, com chave própria para não competir com elas.
  */
+
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 const HOSTS_PERMITIDOS = ["diariodonordeste.verdesmares.com.br", "verdesmares.com.br"];
 const MAX_BYTES = 8 * 1024 * 1024;
+
+async function dentroDoLimite(request: Request): Promise<boolean> {
+  // `cf-connecting-ip` é preenchido pela Cloudflare e não é forjável pelo
+  // cliente — ao contrário de `x-forwarded-for`.
+  const ip = request.headers.get("cf-connecting-ip") ?? "desconhecido";
+  const limitador = getCloudflareContext().env.VIEWS_RATE_LIMITER;
+  if (!limitador) return true;
+  const { success } = await limitador.limit({ key: `imagem:${ip}` });
+  return success;
+}
 
 function decodificar(origem: string): string | null {
   try {
@@ -33,7 +50,11 @@ function hostPermitido(url: URL): boolean {
   return HOSTS_PERMITIDOS.some((h) => url.hostname === h || url.hostname.endsWith(`.${h}`));
 }
 
-export async function GET(_request: Request, ctx: { params: Promise<{ origem: string }> }) {
+export async function GET(request: Request, ctx: { params: Promise<{ origem: string }> }) {
+  if (!(await dentroDoLimite(request))) {
+    return new Response("muitas requisições", { status: 429, headers: { "retry-after": "60" } });
+  }
+
   const { origem } = await ctx.params;
   const alvo = decodificar(origem);
   if (!alvo) return new Response("origem inválida", { status: 400 });
