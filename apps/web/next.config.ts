@@ -96,6 +96,29 @@ const SECURITY_HEADERS = [
 const nextConfig: NextConfig = {
   transpilePackages: ["@netfor/db"],
   cacheComponents: true,
+  experimental: {
+    /**
+     * CORREÇÃO DO ERRO 1101 — não mexer sem entender o porquê.
+     *
+     * O Next descomprime o "postponed state" do PPR com `inflateSync` e passa
+     * `maxOutputLength = maxPostponedStateSize * 5`, com padrão de 100MB → 500MB.
+     * O `node:zlib` do workerd aceita no máximo 128MB (134217728) e responde com
+     * RangeError. Resultado em produção, a cada requisição:
+     *
+     *   Failed to parse postponed state RangeError: The value of
+     *   "options.maxOutputLength" is out of range … Received 524288000
+     *
+     * Falhar aqui não derruba a página — derruba o CACHE. O shell pré-renderizado
+     * vira inútil, toda requisição renderiza do zero e regrava as entradas: ~5
+     * put() no KV por requisição. Com o teto de 1000/dia do plano free, ~170
+     * visitas zeram a cota; daí em diante todo acesso é render frio contra o
+     * Neon e o Worker começa a estourar. É o "funciona de manhã e morre" diário.
+     *
+     * 16MB × 5 = 80MB, folgado abaixo do teto do workerd. O estado real das
+     * nossas páginas é da ordem de KB, então o limite nunca aperta de fato.
+     */
+    maxPostponedStateSize: "16mb",
+  },
   // Não anunciar a stack: reduz o custo de mapear alvo por versão.
   poweredByHeader: false,
   async headers() {

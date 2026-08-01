@@ -63,6 +63,14 @@
       "simple": { "limit": 20, "period": 60 },
     },
   ],
+  // Sem isto o Worker não grava log nenhum: o painel mostra só "Error 1101" e a
+  // causa se perde. Foi o que fez o diagnóstico depender de `wrangler tail` ao
+  // vivo, torcendo para o erro acontecer com a janela aberta.
+  // `head_sampling_rate: 1` = 100% das requisições; o volume aqui é baixo.
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1,
+  },
   "vars": {
     "REWRITE_MODE": "false",
   },
