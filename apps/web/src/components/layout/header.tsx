@@ -31,14 +31,20 @@ function LinhaDeJogo({ proximo }: { proximo: Match | null }) {
   const emCasa = proximo.homeTeam.includes("Fortaleza");
   const adversario = emCasa ? proximo.awayTeam : proximo.homeTeam;
 
+  // Uma linha só, sempre. Com `flex-wrap` os três blocos viravam três linhas em
+  // 320px e o masthead inchava. Agora o selo é fixo, o meio trunca e o mando de
+  // campo — a informação menos essencial — some nas telas estreitas.
   return (
-    <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-      <span className="bg-primary px-1.5 font-bold tracking-wide text-white uppercase">
-        Próximo jogo
+    <span className="flex min-w-0 items-center gap-2 whitespace-nowrap">
+      <span className="shrink-0 bg-primary px-1.5 font-bold tracking-wide text-white uppercase">
+        Próximo
       </span>
-      <span className="font-semibold text-foreground">Fortaleza × {adversario}</span>
-      <span className="text-muted">
-        {formatKickoff(proximo.kickoffAt)} · {emCasa ? "em casa" : "fora"}
+      <span className="min-w-0 truncate font-semibold text-foreground">
+        Fortaleza × {adversario}
+      </span>
+      <span className="shrink-0 text-muted">
+        {formatKickoff(proximo.kickoffAt)}
+        <span className="hidden sm:inline"> · {emCasa ? "em casa" : "fora"}</span>
       </span>
     </span>
   );

@@ -19,17 +19,23 @@ function TeamBadge({
     <span className="flex min-w-0 items-center justify-between gap-2">
       <span className="flex min-w-0 items-center gap-2">
         {logo ? (
-          <Image src={logo} alt="" width={22} height={22} className="size-[22px] object-contain" />
+          <Image
+            src={logo}
+            alt=""
+            width={22}
+            height={22}
+            className="size-[18px] shrink-0 object-contain sm:size-[22px]"
+          />
         ) : (
           <span
-            className="flex size-[22px] items-center justify-center rounded-full bg-surface-2 text-[9px] font-bold text-muted"
+            className="flex size-[18px] shrink-0 items-center justify-center rounded-full bg-surface-2 text-[8px] font-bold text-muted sm:size-[22px] sm:text-[9px]"
             aria-hidden
           >
             {name.slice(0, 3).toUpperCase()}
           </span>
         )}
         <span
-          className={`truncate text-sm ${isFortaleza ? "font-bold" : "font-medium text-muted"}`}
+          className={`truncate text-xs sm:text-sm ${isFortaleza ? "font-bold" : "font-medium text-muted"}`}
         >
           {name}
         </span>
@@ -41,18 +47,18 @@ function TeamBadge({
   );
 }
 
-function MatchCard({ match }: { match: Match }) {
+function MatchCard({ match, ocultoNoCelular = false }: { match: Match; ocultoNoCelular?: boolean }) {
   const finished = match.status === "finished";
   const live = match.status === "live";
   const showScore = finished || live;
   return (
     <div
-      className={`w-64 shrink-0 snap-start rounded-[--radius-card] border bg-surface p-4 ${
+      className={`min-w-0 rounded-[--radius-card] border bg-surface p-3 sm:w-64 sm:shrink-0 sm:snap-start sm:p-4 ${
         live ? "ao-vivo border-primary" : "border-line"
-      }`}
+      } ${ocultoNoCelular ? "hidden sm:block" : ""}`}
     >
       <div className="mb-3 flex items-center justify-between gap-2">
-        <span className="truncate text-[11px] font-medium tracking-wide text-muted uppercase">
+        <span className="truncate text-[10px] font-medium tracking-wide text-muted uppercase sm:text-[11px]">
           {match.competition}
           {match.round ? ` · ${match.round}` : ""}
         </span>
@@ -95,9 +101,12 @@ export function MatchTicker({ matches }: { matches: Match[] }) {
             Agenda completa →
           </Link>
         </div>
-        <div className="scrollbar-none flex snap-x snap-mandatory gap-3 overflow-x-auto">
-          {matches.map((match) => (
-            <MatchCard key={match.id} match={match} />
+        {/* Celular: dois cartões lado a lado, largura total. Rolagem horizontal
+            com cartão de 256px deixava o segundo cortado pela metade, que era o
+            que parecia quebrado. Do `sm` para cima volta a ser trilho. */}
+        <div className="scrollbar-none grid grid-cols-2 gap-3 sm:flex sm:snap-x sm:snap-mandatory sm:overflow-x-auto">
+          {matches.map((match, i) => (
+            <MatchCard key={match.id} match={match} ocultoNoCelular={i >= 2} />
           ))}
         </div>
       </div>
