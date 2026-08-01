@@ -31,37 +31,8 @@ async function seed() {
     throw new Error("Falha ao criar/localizar source de seed");
   }
 
-  await db
-    .insert(articles)
-    .values([
-      {
-        sourceId,
-        title: "Fortaleza vence clássico e sobe na tabela do Brasileirão",
-        slug: "fortaleza-vence-classico-e-sobe-na-tabela-do-brasileirao",
-        excerpt:
-          "Com gols no segundo tempo, o Leão do Pici confirmou o favoritismo no Castelão e ganhou posições na classificação.",
-        originalUrl: "https://ge.globo.com/ce/futebol/times/fortaleza/noticia/exemplo-seed-1.ghtml",
-        imageUrl: null,
-        category: "Brasileirão",
-        publishedAt: new Date("2026-07-27T21:30:00-03:00"),
-        isHighlighted: true,
-        contentHash: "seed-hash-classico-vitoria",
-      },
-      {
-        sourceId,
-        title: "Mercado da bola: Fortaleza encaminha contratação de atacante",
-        slug: "mercado-da-bola-fortaleza-encaminha-contratacao-de-atacante",
-        excerpt:
-          "Diretoria do Tricolor do Pici avança em negociação e reforço pode chegar ainda nesta janela de transferências.",
-        originalUrl: "https://ge.globo.com/ce/futebol/times/fortaleza/noticia/exemplo-seed-2.ghtml",
-        imageUrl: null,
-        category: "Mercado da Bola",
-        publishedAt: new Date("2026-07-28T10:15:00-03:00"),
-        isHighlighted: false,
-        contentHash: "seed-hash-mercado-atacante",
-      },
-    ])
-    .onConflictDoNothing({ target: articles.originalUrl });
+  // Matérias de demonstração removidas: o portal vive de coleta real, e
+  // exemplo publicado sem texto próprio vazaria para o índice.
 
   // Catálogo curado vive em ./data/cantos.ts, mantido à mão pelo dono do portal.
   // A faixa entra com o vídeo mesmo sem letra: o player já é conteúdo útil, e a

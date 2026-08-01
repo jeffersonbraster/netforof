@@ -29,6 +29,41 @@ export function breadcrumbJsonLd(items: Array<{ name: string; url: string }>) {
   };
 }
 
+/**
+ * Identidade da publicação para o Google News.
+ *
+ * O `NewsMediaOrganization` é o que a esteira de notícias lê para saber quem
+ * publica, como falar com a redação e onde ficam as regras editoriais. Sem ele
+ * o portal aparece como site genérico.
+ */
+export const newsOrganizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "NewsMediaOrganization",
+  name: SITE_NAME,
+  url: SITE_URL,
+  logo: {
+    "@type": "ImageObject",
+    url: `${SITE_URL}/icon-512.png`,
+    width: 512,
+    height: 512,
+  },
+  description:
+    "Portal independente de notícias sobre o Fortaleza Esporte Clube, com conteúdo editorial próprio.",
+  foundingDate: "2026",
+  email: "contato@netfor.com.br",
+  contactPoint: {
+    "@type": "ContactPoint",
+    contactType: "editorial",
+    email: "contato@netfor.com.br",
+    availableLanguage: "pt-BR",
+  },
+  // Exigido de fato na avaliação editorial do Google News.
+  ethicsPolicy: `${SITE_URL}/termos`,
+  correctionsPolicy: `${SITE_URL}/termos`,
+  publishingPrinciples: `${SITE_URL}/sobre`,
+  sameAs: ["https://www.instagram.com/netfor.club"],
+};
+
 export const webSiteJsonLd = {
   "@context": "https://schema.org",
   "@type": "WebSite",

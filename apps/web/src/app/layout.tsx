@@ -6,7 +6,14 @@ import Script from "next/script";
 import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
 import { ADSENSE_CLIENT } from "@/lib/ads";
-import { GOOGLE_SITE_VERIFICATION, JsonLd, SITE_NAME, SITE_URL, webSiteJsonLd } from "@/lib/seo";
+import {
+  GOOGLE_SITE_VERIFICATION,
+  JsonLd,
+  newsOrganizationJsonLd,
+  SITE_NAME,
+  SITE_URL,
+  webSiteJsonLd,
+} from "@/lib/seo";
 import { getProximoJogo } from "@/modules/matches/queries";
 
 import "./globals.css";
@@ -73,6 +80,7 @@ export default async function RootLayout({
           {themeInitScript}
         </Script>
         <JsonLd data={webSiteJsonLd} />
+        <JsonLd data={newsOrganizationJsonLd} />
         {/* WCAG 2.4.1: sem isto, quem navega por teclado atravessa o header fixo
             e as duas navs a cada página antes de chegar ao conteúdo. */}
         <a
