@@ -82,9 +82,7 @@ export function CompactCard({ article }: { article: ArticleCard }) {
           <h3 className="font-display line-clamp-2 text-base leading-snug font-bold group-hover:text-primary-text">
             {article.title}
           </h3>
-          <p className="text-xs text-muted">
-            {article.sourceName} · {formatShortDateTime(article.publishedAt)}
-          </p>
+          <p className="text-xs text-muted">{formatShortDateTime(article.publishedAt)}</p>
         </div>
       </Link>
     </article>

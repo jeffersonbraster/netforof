@@ -59,8 +59,10 @@ export async function getHomeArticles(): Promise<{
 
   return {
     hero,
-    secondary: rest.slice(0, 4),
-    latest: rest.slice(4, 12),
+    // Três no destaque: a manchete e duas ao lado. Mais que isso vira grade e a
+    // manchete perde a função de manchete.
+    secondary: rest.slice(0, 2),
+    latest: rest.slice(2, 10),
   };
 }
 
@@ -210,6 +212,48 @@ export async function getArticleDetail(slug: string): Promise<ArticleDetail | nu
   const { contentHash, ...article } = row;
   void contentHash;
   return { ...article, related };
+}
+
+/**
+ * Destaques do dia — o que está movimentando o portal nas últimas 24 horas.
+ *
+ * Janela MÓVEL de 24h, não data de calendário: publicação por data zeraria a
+ * seção toda madrugada (agora mesmo há 0 matérias "de hoje" e 14 nas últimas
+ * 24h). Ordena por leituras da janela e cai para recência quando ninguém leu
+ * ainda — seção vazia é pior que seção por ordem cronológica.
+ */
+export async function getDestaquesDoDia(limite = 4): Promise<ArticleCard[]> {
+  "use cache";
+  cacheTag("articles");
+  cacheLife("hours");
+
+  const desde = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const diaInicial = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+  const rows = await db
+    .select({
+      ...cardColumns,
+      contentHash: articles.contentHash,
+      leituras: sql<number>`coalesce(sum(${articleViews.count}), 0)::int`,
+    })
+    .from(articles)
+    .innerJoin(sources, eq(articles.sourceId, sources.id))
+    .leftJoin(
+      articleViews,
+      and(eq(articleViews.articleId, articles.id), gte(articleViews.day, diaInicial)),
+    )
+    .where(
+      and(
+        eq(articles.status, "published"),
+        isNotNull(articles.content),
+        gte(articles.publishedAt, desde),
+      ),
+    )
+    .groupBy(articles.id, sources.name)
+    .orderBy(desc(sql`coalesce(sum(${articleViews.count}), 0)`), desc(articles.publishedAt))
+    .limit(limite * 3);
+
+  return dedupeByHash(rows).slice(0, limite);
 }
 
 export interface MostReadItem {

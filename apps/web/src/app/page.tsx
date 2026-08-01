@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { cacheLife, cacheTag } from "next/cache";
 
 import { MatchTicker } from "@/components/matches/match-ticker";
-import { CompactCard, HeroCard, NewsCard } from "@/components/news/news-card";
+import { DestaquesDoDia } from "@/components/news/destaques-do-dia";
+import { HeroCard, NewsCard } from "@/components/news/news-card";
 import { ButtonLink } from "@/components/ui/button";
 import { SectionTitle } from "@/components/ui/section-title";
 import { AdSlot } from "@/components/widgets/ad-slot";
@@ -13,7 +14,7 @@ import { MostRead } from "@/components/widgets/most-read";
 import { SponsorCard } from "@/components/widgets/sponsor-card";
 import { getChants } from "@/modules/chants/queries";
 import { getRecentResults, getStandings, getTickerMatches } from "@/modules/matches/queries";
-import { getHomeArticles, getMostReadWeek } from "@/modules/news/queries";
+import { getDestaquesDoDia, getHomeArticles, getMostReadWeek } from "@/modules/news/queries";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
@@ -24,9 +25,17 @@ export default async function Home() {
   cacheTag("articles", "chants", "matches", "standings");
   cacheLife("hours");
 
-  const [{ hero, secondary, latest }, mostRead, chants, tickerMatches, standings, recentResults] =
-    await Promise.all([
+  const [
+    { hero, secondary, latest },
+    destaquesDoDia,
+    mostRead,
+    chants,
+    tickerMatches,
+    standings,
+    recentResults,
+  ] = await Promise.all([
       getHomeArticles(),
+      getDestaquesDoDia(4),
       getMostReadWeek(),
       getChants(),
       getTickerMatches(),
@@ -47,31 +56,28 @@ export default async function Home() {
       <MatchTicker matches={tickerMatches} />
 
       <div className="mx-auto max-w-6xl space-y-10 px-4 py-8">
-        {/* Superfície 1 — a manchete. Sem título de seção: capa de jornal não
-            anuncia "destaques", ela mostra a manchete e pronto. */}
+        {/* Superfície 1 — a manchete e duas ao lado. Capa de jornal não anuncia
+            "destaques": mostra a manchete e pronto. */}
         {hero && (
           <section aria-label="Manchete">
-            <div className="grid gap-5 lg:grid-cols-[1.7fr_1fr]">
+            <div className="grid gap-5 lg:grid-cols-[1.75fr_1fr]">
               <HeroCard article={hero} />
-              <ol className="divide-y divide-line border-t border-line">
-                {secondary.map((article, i) => (
-                  <li key={article.id} className="flex gap-3 py-3">
-                    <span
-                      className="font-display text-2xl leading-none font-black text-primary-text/70 tabular-nums"
-                      aria-hidden
-                    >
-                      {String(i + 2).padStart(2, "0")}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <CompactCard article={article} />
-                    </div>
-                  </li>
-                ))}
-              </ol>
+              {secondary.length > 0 && (
+                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-1">
+                  {secondary.map((article) => (
+                    <NewsCard key={article.id} article={article} />
+                  ))}
+                </div>
+              )}
             </div>
           </section>
         )}
 
+      </div>
+
+      <DestaquesDoDia itens={destaquesDoDia} />
+
+      <div className="mx-auto max-w-6xl space-y-10 px-4 py-8">
         <AdSlot format="leaderboard" />
 
         <div className="grid gap-10 lg:grid-cols-[1fr_320px]">

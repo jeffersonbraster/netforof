@@ -71,6 +71,15 @@ const socials = [
   },
 ];
 
+const secoes = [
+  { href: "/noticias", label: "Notícias" },
+  { href: "/agenda", label: "Agenda" },
+  { href: "/classificacao", label: "Classificação" },
+  { href: "/videos", label: "Vídeos" },
+  { href: "/cantos-da-torcida", label: "Cantos da Torcida" },
+  { href: "/noticias/rss", label: "RSS" },
+];
+
 async function CopyrightYear() {
   "use cache";
   cacheLife("days");
@@ -94,7 +103,26 @@ export function Footer() {
           Todas as notícias do <span className="text-primary-text">Leão</span> em um só lugar.
         </p>
 
-        <div className="mt-10 flex flex-wrap items-end justify-between gap-x-8 gap-y-6">
+        {/* Links internos no rodapé importam para SEO: dão ao rastreador um
+            caminho para toda seção a partir de qualquer página, e distribuem
+            autoridade interna. O Ft5 admite links — o que ele rejeita é o
+            paredão de quatro colunas do padrão anterior. */}
+        <nav aria-label="Mapa do site" className="mt-10 border-t border-line pt-6">
+          <ul className="flex flex-wrap gap-x-6 gap-y-2 font-display text-sm font-bold tracking-wide uppercase">
+            {secoes.map((s) => (
+              <li key={s.href}>
+                <Link
+                  href={s.href}
+                  className="text-muted transition-colors hover:text-primary-text"
+                >
+                  {s.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <div className="mt-8 flex flex-wrap items-end justify-between gap-x-8 gap-y-6">
           <div>
             <Image
               src="/netfor.svg"
