@@ -27,16 +27,17 @@ function CardImage({
 
 export function NewsCard({ article }: { article: ArticleCard }) {
   return (
-    <article className="group overflow-hidden rounded-[--radius-card] border border-line bg-surface transition-colors hover:border-primary">
-      <Link href={`/noticias/${article.slug}`} className="block">
+    <article className="group flex h-full flex-col overflow-hidden rounded-[--radius-card] border border-line bg-surface transition-colors hover:border-primary">
+      <Link href={`/noticias/${article.slug}`} className="flex h-full flex-col">
         <div className="relative aspect-video overflow-hidden">
           <CardImage article={article} sizes="(max-width: 768px) 100vw, 400px" />
         </div>
-        <div className="space-y-2 p-4">
-          <div className="flex flex-wrap items-center gap-2">
-            {article.category && <Badge variant="category">{article.category}</Badge>}
-            <Badge variant="source">{article.sourceName}</Badge>
-          </div>
+        <div className="flex flex-1 flex-col space-y-2 p-4">
+          {article.category && (
+            <div>
+              <Badge variant="category">{article.category}</Badge>
+            </div>
+          )}
           <h3 className="font-display text-xl leading-[1.15] font-bold tracking-tight group-hover:text-primary-text">
             {article.title}
           </h3>
@@ -48,23 +49,34 @@ export function NewsCard({ article }: { article: ArticleCard }) {
   );
 }
 
+/**
+ * Manchete. O texto vive ABAIXO da imagem, não sobreposto a ela.
+ *
+ * A sobreposição com gradiente é bonita quando a foto é escura e o título é
+ * curto — e quebra nos dois casos contrários: no tema claro o texto branco some
+ * sobre foto clara, e título longo transborda a área da imagem. Texto embaixo é
+ * legível sempre, e é o que capa de jornal faz.
+ */
 export function HeroCard({ article }: { article: ArticleCard }) {
   return (
-    <article className="group relative overflow-hidden rounded-[--radius-card] border-l-[3px] border-primary">
-      <Link href={`/noticias/${article.slug}`} className="block">
-        <div className="relative aspect-video overflow-hidden sm:aspect-[16/10]">
-          <CardImage article={article} sizes="(max-width: 1024px) 100vw, 640px" priority />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+    <article className="group flex h-full flex-col overflow-hidden rounded-[--radius-card] border border-line border-l-[3px] border-l-primary bg-surface">
+      <Link href={`/noticias/${article.slug}`} className="flex h-full flex-col">
+        <div className="relative aspect-video overflow-hidden">
+          <CardImage article={article} sizes="(max-width: 1024px) 100vw, 720px" priority />
         </div>
-        <div className="absolute inset-x-0 bottom-0 space-y-2 p-5">
-          <div className="flex flex-wrap items-center gap-2">
-            {article.category && <Badge variant="category">{article.category}</Badge>}
-            <Badge variant="source">{article.sourceName}</Badge>
-          </div>
-          <h2 className="font-display text-3xl leading-[1.05] font-extrabold tracking-tight text-white sm:text-5xl">
+        <div className="flex flex-1 flex-col gap-2 p-5">
+          {article.category && (
+            <div>
+              <Badge variant="category">{article.category}</Badge>
+            </div>
+          )}
+          <h2 className="font-display text-3xl leading-[1.05] font-extrabold tracking-tight group-hover:text-primary-text sm:text-[2.75rem]">
             {article.title}
           </h2>
-          <p className="line-clamp-2 max-w-xl text-sm text-white/75">{article.excerpt}</p>
+          <p className="line-clamp-3 max-w-2xl leading-relaxed text-muted">{article.excerpt}</p>
+          <p className="mt-auto pt-2 text-xs text-muted">
+            {formatShortDateTime(article.publishedAt)}
+          </p>
         </div>
       </Link>
     </article>

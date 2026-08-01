@@ -37,13 +37,26 @@ function RssIcon() {
   );
 }
 
+/**
+ * Desenhado em traço, herdando `currentColor` como os outros ícones do rodapé.
+ * A versão anterior usava as cores da marca do Google e era o único colorido da
+ * fileira — chamava mais atenção que o próprio conteúdo.
+ */
 function GoogleNewsIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="size-5" aria-hidden>
-      <path fill="#EA4335" d="M13.5 5 20.5 7.7V16l-7-2.7z" />
-      <path fill="#FBBC04" d="M10.5 5 3.5 7.7V16l7-2.7z" />
-      <rect x="4" y="8.5" width="16" height="11" rx="2" fill="#4285F4" />
-      <path fill="#fff" d="M7 12h7v1.5H7zm0 3h10v1.5H7z" />
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="size-5"
+      aria-hidden
+    >
+      <path d="M4 6.5h11a1.5 1.5 0 0 1 1.5 1.5v10H5.5A1.5 1.5 0 0 1 4 16.5z" />
+      <path d="M16.5 10H19a1 1 0 0 1 1 1v6a1.5 1.5 0 0 1-3 0" />
+      <path d="M7 10h5M7 13h5M7 16h3" />
     </svg>
   );
 }
@@ -98,8 +111,18 @@ async function CopyrightYear() {
 export function Footer() {
   return (
     <footer className="mt-16 border-t-[3px] border-primary bg-surface">
-      <div className="mx-auto max-w-6xl px-4 py-14">
-        <p className="font-display max-w-3xl text-4xl leading-[1.05] font-extrabold tracking-tight uppercase sm:text-6xl">
+      <div className="relative mx-auto max-w-6xl overflow-hidden px-4 py-14">
+        {/* Leão como marca d'água: presença da identidade sem competir com a
+            frase. Fica atrás do texto, recortado pela borda direita. */}
+        <Image
+          src="/lion-not-found.png"
+          alt=""
+          width={320}
+          height={320}
+          aria-hidden
+          className="pointer-events-none absolute -right-10 -bottom-6 w-48 opacity-[0.07] select-none sm:w-72 dark:opacity-[0.12]"
+        />
+        <p className="font-display relative max-w-3xl text-4xl leading-[1.05] font-extrabold tracking-tight uppercase sm:text-6xl">
           Todas as notícias do <span className="text-primary-text">Leão</span> em um só lugar.
         </p>
 

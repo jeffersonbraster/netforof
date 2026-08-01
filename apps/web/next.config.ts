@@ -46,9 +46,17 @@ const ADSENSE = [
   "https://*.gstatic.com",
 ];
 
+/**
+ * O React em modo de desenvolvimento usa `eval()` para reconstruir pilha de
+ * chamada e outras ferramentas de depuração — sem `'unsafe-eval'` o console
+ * enche de erro e o debug fica cego. Em produção o React nunca usa eval, então
+ * a permissão fica restrita ao dev e NÃO vaza para o site publicado.
+ */
+const DEV = process.env.NODE_ENV === "development";
+
 const CSP = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline' ${CF_ANALYTICS_SCRIPT} ${ADSENSE.join(" ")}`,
+  `script-src 'self' 'unsafe-inline'${DEV ? " 'unsafe-eval'" : ""} ${CF_ANALYTICS_SCRIPT} ${ADSENSE.join(" ")}`,
   "style-src 'self' 'unsafe-inline'",
   // Imagens vêm dos portais agregados; o otimizador do Next serve como data:/blob:
   "img-src 'self' data: blob: https:",

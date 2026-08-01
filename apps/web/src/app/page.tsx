@@ -60,7 +60,7 @@ export default async function Home() {
             "destaques": mostra a manchete e pronto. */}
         {hero && (
           <section aria-label="Manchete">
-            <div className="grid gap-5 lg:grid-cols-[1.75fr_1fr]">
+            <div className="grid items-stretch gap-5 lg:grid-cols-[1.6fr_1fr]">
               <HeroCard article={hero} />
               {secondary.length > 0 && (
                 <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-1">
