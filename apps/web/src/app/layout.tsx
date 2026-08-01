@@ -66,7 +66,12 @@ export default async function RootLayout({
       className={`${inter.variable} ${barlowCondensed.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
-        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        {/* `beforeInteractive` em vez de <script> cru: o React avisa que script
+            dentro de componente não executa em render de cliente. O tema precisa
+            rodar antes da pintura para não piscar branco. */}
+        <Script id="tema-inicial" strategy="beforeInteractive">
+          {themeInitScript}
+        </Script>
         <JsonLd data={webSiteJsonLd} />
         {/* WCAG 2.4.1: sem isto, quem navega por teclado atravessa o header fixo
             e as duas navs a cada página antes de chegar ao conteúdo. */}

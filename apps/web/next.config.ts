@@ -115,9 +115,16 @@ const nextConfig: NextConfig = {
   images: {
     // Transformações de imagens externas ficam cacheadas por 24h no mínimo
     minimumCacheTTL: 86400,
-    // O otimizador recusa caminho local com query string sem isto declarado —
-    // e o proxy de imagem recebe a origem justamente por query.
-    localPatterns: [{ pathname: "/api/imagem", search: "**" }],
+    /**
+     * Declarar `localPatterns` BLOQUEIA todo caminho local não listado — por
+     * isso os assets do próprio site precisam constar, não só o proxy. Ambos
+     * exigem `search: ""`: omitir o campo aceitaria qualquer query, que é o que
+     * a documentação do Next desaconselha.
+     */
+    localPatterns: [
+      { pathname: "/api/imagem/**", search: "" },
+      { pathname: "/**", search: "" },
+    ],
     qualities: [60, 75],
     remotePatterns: [
       // Portais agregados — liberados conforme adapters da Fase 3

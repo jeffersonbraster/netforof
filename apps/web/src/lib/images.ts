@@ -28,5 +28,9 @@ function precisaDeProxy(src: string): boolean {
  * também consegue ler, porque somos nós servindo).
  */
 export function urlDaImagem(src: string): string {
-  return precisaDeProxy(src) ? `/api/imagem?url=${encodeURIComponent(src)}` : src;
+  if (!precisaDeProxy(src)) return src;
+  // base64url no caminho, sem query: permite exigir `search: ""` no
+  // `localPatterns` do otimizador em vez de liberar qualquer query.
+  const base64 = btoa(src).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  return `/api/imagem/${base64}`;
 }
