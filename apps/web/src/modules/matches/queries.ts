@@ -1,4 +1,4 @@
-import { asc, desc, eq, gte, lt, matches, standings, type Match, type Standing } from "@netfor/db";
+import { asc, desc, eq, gte, lt, ne, matches, standings, type Match, type Standing } from "@netfor/db";
 import { cacheLife, cacheTag } from "next/cache";
 
 import { db } from "@/lib/db";
@@ -14,6 +14,7 @@ export async function getTickerMatches(): Promise<Match[]> {
   cacheLife("hours");
 
   const now = new Date();
+  // Um resultado à esquerda para ancorar, três jogos à frente para a expectativa.
   const [upcoming, lastFinished] = await Promise.all([
     db
       .select()
@@ -82,6 +83,41 @@ export async function getRecentResults(limit: number): Promise<Match[]> {
     .where(eq(matches.status, "finished"))
     .orderBy(desc(matches.kickoffAt))
     .limit(limit);
+}
+
+/**
+ * Campanha em copas de mata-mata.
+ *
+ * Copa do Brasil não tem tabela de classificação — é eliminatória. Mostrar uma
+ * "classificação" dela seria inventar. O que existe e interessa ao torcedor é a
+ * campanha: os jogos disputados e os que vêm. Serve para Copa do Nordeste e
+ * Cearense quando entrarem.
+ */
+export async function getCampanhaDeCopas(): Promise<
+  Array<{ competicao: string; jogos: Match[] }>
+> {
+  "use cache";
+  cacheTag("matches");
+  cacheLife("hours");
+
+  const linhas = await db
+    .select()
+    .from(matches)
+    .where(ne(matches.competition, "Brasileirão Série B"))
+    .orderBy(asc(matches.kickoffAt));
+
+  const porCompeticao = new Map<string, Match[]>();
+  for (const jogo of linhas) {
+    const atual = porCompeticao.get(jogo.competition) ?? [];
+    atual.push(jogo);
+    porCompeticao.set(jogo.competition, atual);
+  }
+
+  // Só competições com jogo futuro: campeonato encerrado não interessa na página.
+  const agora = Date.now();
+  return [...porCompeticao.entries()]
+    .filter(([, jogos]) => jogos.some((j) => j.kickoffAt.getTime() >= agora))
+    .map(([competicao, jogos]) => ({ competicao, jogos }));
 }
 
 export async function getStandings(): Promise<Standing[]> {

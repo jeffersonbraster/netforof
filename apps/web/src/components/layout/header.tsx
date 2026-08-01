@@ -1,10 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Suspense } from "react";
 
 import { SearchDialog } from "@/components/search/search-dialog";
 import { formatKickoff } from "@/lib/format";
 import type { Match } from "@netfor/db";
 
+import { SiteNav } from "./site-nav";
 import { ThemeToggle } from "./theme-toggle";
 
 /**
@@ -19,13 +21,6 @@ import { ThemeToggle } from "./theme-toggle";
  * qualquer manchete.
  */
 
-const navLinks = [
-  { href: "/noticias", label: "Notícias" },
-  { href: "/agenda", label: "Agenda" },
-  { href: "/classificacao", label: "Classificação" },
-  { href: "/videos", label: "Vídeos" },
-  { href: "/cantos-da-torcida", label: "Cantos" },
-];
 
 function LinhaDeJogo({ proximo }: { proximo: Match | null }) {
   if (!proximo) {
@@ -84,21 +79,12 @@ export function Header({ proximoJogo = null }: { proximoJogo?: Match | null }) {
         </div>
       </div>
 
-      {/* Trilho de seções: rola no mobile, sem JS. */}
-      <nav aria-label="Seções" className="border-t border-line">
-        <ul className="scrollbar-none mx-auto flex max-w-6xl items-center gap-6 overflow-x-auto px-4 font-display text-sm font-bold tracking-wide whitespace-nowrap uppercase">
-          {navLinks.map((link) => (
-            <li key={link.href}>
-              <Link
-                href={link.href}
-                className="inline-block border-b-2 border-transparent py-2.5 text-muted transition-colors hover:border-primary hover:text-foreground"
-              >
-                {link.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
+      {/* `usePathname()` é dado de requisição: com Cache Components, lê-lo fora
+          de um boundary quebra o prerender das rotas. O fallback é o trilho sem
+          marcação de ativo — some assim que a rota resolve. */}
+      <Suspense fallback={<div className="h-11 border-t border-line" />}>
+        <SiteNav />
+      </Suspense>
     </header>
   );
 }

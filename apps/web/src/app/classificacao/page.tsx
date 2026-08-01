@@ -4,7 +4,7 @@ import Image from "next/image";
 
 import { SectionTitle } from "@/components/ui/section-title";
 import { formatShortDateTime } from "@/lib/format";
-import { getStandings } from "@/modules/matches/queries";
+import { getCampanhaDeCopas, getStandings } from "@/modules/matches/queries";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/classificacao" },
@@ -16,9 +16,10 @@ export const metadata: Metadata = {
 export default async function ClassificacaoPage() {
   "use cache";
   cacheTag("standings");
+  cacheTag("matches");
   cacheLife("days");
 
-  const standings = await getStandings();
+  const [standings, copas] = await Promise.all([getStandings(), getCampanhaDeCopas()]);
   const updatedAt = standings[0]?.updatedAt;
 
   return (
@@ -103,6 +104,36 @@ export default async function ClassificacaoPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Copa é mata-mata: não tem tabela. O que existe e interessa é a
+          campanha — jogos disputados e os que vêm. */}
+      {copas.map(({ competicao, jogos }) => (
+        <section key={competicao} className="mt-10">
+          <SectionTitle>{competicao}</SectionTitle>
+          <ul className="divide-y divide-line rounded-xl border border-line bg-surface">
+            {jogos.map((jogo) => {
+              const encerrado = jogo.status === "finished";
+              return (
+                <li
+                  key={jogo.id}
+                  className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-3 text-sm"
+                >
+                  <span className="min-w-0 flex-1 font-medium">
+                    {jogo.homeTeam}{" "}
+                    {encerrado && (
+                      <span className="font-display font-bold tabular-nums text-primary-text">
+                        {jogo.homeScore} × {jogo.awayScore}
+                      </span>
+                    )}
+                    {!encerrado && <span className="text-muted">×</span>} {jogo.awayTeam}
+                  </span>
+                  <span className="text-xs text-muted">{formatShortDateTime(jogo.kickoffAt)}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ))}
 
       <div className="mt-4 flex flex-wrap gap-4 text-xs text-muted">
         <span className="flex items-center gap-1.5">

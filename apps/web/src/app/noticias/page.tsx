@@ -26,7 +26,7 @@ function buildQuery(params: Record<string, string | null>): string {
   return s ? `?${s}` : "";
 }
 
-type SearchParams = Promise<{ pagina?: string; categoria?: string; fonte?: string }>;
+type SearchParams = Promise<{ pagina?: string; categoria?: string }>;
 
 /**
  * Teto de paginação. `page` entra na chave de cache do `getArticlesPage`, então
@@ -41,43 +41,29 @@ async function NewsList({ searchParams }: { searchParams: SearchParams }) {
 
   // Filtro desconhecido colapsa para "sem filtro" em vez de virar chave nova.
   const category = filters.categories.find((c) => c === params.categoria) ?? null;
-  const sourceSlug = filters.sources.find((s) => s.slug === params.fonte)?.slug ?? null;
   const page = Math.min(
     MAX_PAGINA,
     Math.max(1, Number.parseInt(params.pagina ?? "1", 10) || 1),
   );
 
-  const { items, total, pageSize } = await getArticlesPage({ page, category, sourceSlug });
+  const { items, total, pageSize } = await getArticlesPage({ page, category, sourceSlug: null });
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
     <>
-      {/* Filtros por categoria e fonte (diferencial 4 do plano) */}
+      {/* Filtro por categoria. O de fonte saiu: expor a lista de veículos
+          agregados não ajuda o leitor e chama atenção para a origem. */}
       <div className="mb-8 space-y-3 border-y border-line py-4">
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-display text-xs font-bold tracking-wide text-muted uppercase">
             Categoria
           </span>
-          <Link href={`/noticias${buildQuery({ fonte: sourceSlug })}`}>
+          <Link href={`/noticias${buildQuery({})}`}>
             <Badge variant={category === null ? "live" : "neutral"}>Todas</Badge>
           </Link>
           {filters.categories.map((c) => (
-            <Link key={c} href={`/noticias${buildQuery({ categoria: c, fonte: sourceSlug })}`}>
+            <Link key={c} href={`/noticias${buildQuery({ categoria: c })}`}>
               <Badge variant={category === c ? "live" : "neutral"}>{c}</Badge>
-            </Link>
-          ))}
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="font-display text-xs font-bold tracking-wide text-muted uppercase">Fonte</span>
-          <Link href={`/noticias${buildQuery({ categoria: category })}`}>
-            <Badge variant={sourceSlug === null ? "live" : "neutral"}>Todas</Badge>
-          </Link>
-          {filters.sources.map((s) => (
-            <Link
-              key={s.slug}
-              href={`/noticias${buildQuery({ categoria: category, fonte: s.slug })}`}
-            >
-              <Badge variant={sourceSlug === s.slug ? "live" : "neutral"}>{s.name}</Badge>
             </Link>
           ))}
         </div>
@@ -109,7 +95,7 @@ async function NewsList({ searchParams }: { searchParams: SearchParams }) {
             <ButtonLink
               variant="outline"
               size="sm"
-              href={`/noticias${buildQuery({ categoria: category, fonte: sourceSlug, pagina: String(page - 1) })}`}
+              href={`/noticias${buildQuery({ categoria: category, pagina: String(page - 1) })}`}
             >
               ← Anteriores
             </ButtonLink>
@@ -121,7 +107,7 @@ async function NewsList({ searchParams }: { searchParams: SearchParams }) {
             <ButtonLink
               variant="outline"
               size="sm"
-              href={`/noticias${buildQuery({ categoria: category, fonte: sourceSlug, pagina: String(page + 1) })}`}
+              href={`/noticias${buildQuery({ categoria: category, pagina: String(page + 1) })}`}
             >
               Próximas →
             </ButtonLink>

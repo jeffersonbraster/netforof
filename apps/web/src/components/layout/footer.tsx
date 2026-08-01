@@ -162,7 +162,7 @@ export function Footer() {
               className="dark:hidden"
             />
             <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted">
-              Sugestões, dicas ou correções:{" "}
+              Sugestões, dicas ou patrocínios:{" "}
               <a
                 href="mailto:contato@netfor.com.br"
                 className="text-link underline underline-offset-4 hover:text-foreground"

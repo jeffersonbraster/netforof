@@ -10,6 +10,27 @@ import { notifyRevalidate } from "../core/revalidate";
 // API pública da ESPN — dados atuais e gratuitos (API-Football free só cobre 2022–2024).
 const TEAM_ID = 6272; // Fortaleza EC
 const SCHEDULE_URL = `https://site.api.espn.com/apis/site/v2/sports/soccer/all/teams/${TEAM_ID}/schedule`;
+
+/**
+ * Ligas onde procurar jogos FUTUROS por intervalo de datas.
+ *
+ * O endpoint `/teams/<id>/schedule` só devolvia jogos passados — em 01/08/2026
+ * o último evento era de 17/03, e a agenda do site ficava vazia. Os jogos
+ * existem: estão no `scoreboard` da liga, consultado por intervalo. Por isso
+ * a coleta usa os dois: o schedule traz o histórico, o scoreboard traz o que
+ * vem pela frente.
+ */
+const LIGAS_FUTURAS = ["bra.2", "bra.copa_do_brazil"] as const;
+
+/** Janela de busca para frente, em dias. */
+const JANELA_DIAS = 75;
+
+function intervaloDeDatas(): string {
+  const hoje = new Date();
+  const fim = new Date(hoje.getTime() + JANELA_DIAS * 24 * 60 * 60 * 1000);
+  const fmt = (d: Date) => d.toISOString().slice(0, 10).replace(/-/g, "");
+  return `${fmt(hoje)}-${fmt(fim)}`;
+}
 const STANDINGS_URL = "https://site.api.espn.com/apis/v2/sports/soccer/bra.2/standings"; // Série B 2026
 
 const competitionNames: Record<string, string> = {
@@ -39,6 +60,7 @@ interface EspnEvent {
 
 interface EspnScheduleResponse {
   events?: EspnEvent[];
+  leagues?: Array<{ name?: string }>;
 }
 
 interface EspnStandingsResponse {
@@ -58,9 +80,50 @@ function mapStatus(state: string | undefined): "scheduled" | "live" | "finished"
   return "scheduled";
 }
 
+/** Só interessa jogo em que o Fortaleza está em campo. */
+function envolveOFortaleza(event: EspnEvent): boolean {
+  const nomes = (event.competitions?.[0]?.competitors ?? [])
+    .map((c) => c.team?.displayName ?? "")
+    .join(" ");
+  return nomes.includes("Fortaleza");
+}
+
+async function coletarEventos(): Promise<EspnEvent[]> {
+  const eventos: EspnEvent[] = [];
+
+  // Histórico
+  try {
+    const passado = await fetchJson<EspnScheduleResponse>(SCHEDULE_URL);
+    eventos.push(...(passado.events ?? []));
+  } catch (erro) {
+    console.warn("⚠️  Schedule da ESPN falhou:", erro instanceof Error ? erro.message : erro);
+  }
+
+  // Futuro, liga a liga
+  const intervalo = intervaloDeDatas();
+  for (const liga of LIGAS_FUTURAS) {
+    const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/${liga}/scoreboard?dates=${intervalo}`;
+    try {
+      const dados = await fetchJson<EspnScheduleResponse>(url);
+      // No scoreboard o nome da liga vive na raiz, não em cada evento — sem
+      // isto todo jogo futuro entrava como "Desconhecida".
+      const nomeDaLiga = dados.leagues?.[0]?.name;
+      const doFortaleza = (dados.events ?? [])
+        .filter(envolveOFortaleza)
+        .map((e) => ({ ...e, league: e.league ?? { name: nomeDaLiga } }));
+      eventos.push(...doFortaleza);
+      console.log(`  ${liga}: ${doFortaleza.length} jogo(s) do Fortaleza na janela`);
+    } catch (erro) {
+      // Liga fora de temporada devolve payload inválido — não é falha da coleta.
+      console.warn(`  ${liga}: sem dados (${erro instanceof Error ? erro.message : erro})`);
+    }
+  }
+
+  return eventos;
+}
+
 async function syncMatches(db: Db): Promise<number> {
-  const data = await fetchJson<EspnScheduleResponse>(SCHEDULE_URL);
-  const events = data.events ?? [];
+  const events = await coletarEventos();
   let synced = 0;
 
   for (const event of events) {

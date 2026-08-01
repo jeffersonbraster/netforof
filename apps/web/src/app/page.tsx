@@ -57,6 +57,11 @@ export default async function Home() {
       <MatchTicker matches={tickerMatches} />
 
       <div className="mx-auto max-w-6xl space-y-10 px-4 py-8">
+        {/* Posição nobre: entre a faixa de jogos e a manchete, onde o olho passa
+            obrigatoriamente. É o espaço de maior valor da página — anúncio ou
+            patrocinador fixo. */}
+        <AdSlot format="leaderboard" label="Publicidade" />
+
         {/* Superfície 1 — a manchete e duas ao lado. Capa de jornal não anuncia
             "destaques": mostra a manchete e pronto. */}
         {hero && (
