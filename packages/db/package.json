@@ -12,7 +12,8 @@
     "migrate": "drizzle-kit migrate",
     "studio": "drizzle-kit studio",
     "seed": "tsx src/seed.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "importar-cantos": "tsx src/importar-cantos.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.1",
