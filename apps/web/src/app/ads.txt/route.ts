@@ -22,10 +22,13 @@ export async function GET() {
   // `pub-XXXX` no formato exigido pela IAB (sem o prefixo "ca-").
   const publisherId = ADSENSE_CLIENT.replace(/^ca-/, "");
 
+  // Registro na PRIMEIRA linha e tudo em ASCII puro. O comentário anterior
+  // trazia um travessão (U+2014), que deixava a linha 1 fora do ASCII — a
+  // especificação da IAB é texto simples, e não vale arriscar num arquivo cuja
+  // única função é ser lido por um parser rígido.
   const linhas = [
-    "# ads.txt — NETFOR (netfor.com.br)",
-    "# https://iabtechlab.com/ads-txt/",
     `google.com, ${publisherId}, DIRECT, f08c47fec0942fa0`,
+    "# netfor.com.br - https://iabtechlab.com/ads-txt/",
     "",
   ].join("\n");
 
