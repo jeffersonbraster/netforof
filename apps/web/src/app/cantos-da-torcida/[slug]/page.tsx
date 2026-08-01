@@ -32,7 +32,11 @@ export default async function ChantPage({ params }: { params: Params }) {
   if (!chant) notFound();
 
   const outros = (await getChants()).filter((c) => c.slug !== slug).slice(0, 6);
-  const versos = chant.lyrics.split("\n").map((v) => v.trim());
+  const versos = chant.lyrics
+    .split("\n")
+    .map((v) => v.trim())
+    .filter((v, i, todos) => v !== "" || todos[i - 1] !== "");
+  const temLetra = versos.some((v) => v !== "");
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
@@ -75,15 +79,29 @@ export default async function ChantPage({ params }: { params: Params }) {
           <h2 className="font-display mb-3 text-sm font-bold tracking-widest text-muted uppercase">
             Letra
           </h2>
-          <div className="space-y-1 text-lg leading-relaxed">
-            {versos.map((verso, i) =>
-              verso === "" ? (
-                <div key={i} className="h-3" aria-hidden />
-              ) : (
-                <p key={i}>{verso}</p>
-              ),
-            )}
-          </div>
+          {temLetra ? (
+            <div className="space-y-1 text-lg leading-relaxed">
+              {versos.map((verso, i) =>
+                verso === "" ? (
+                  <div key={i} className="h-3" aria-hidden />
+                ) : (
+                  <p key={i}>{verso}</p>
+                ),
+              )}
+            </div>
+          ) : (
+            <p className="text-sm leading-relaxed text-muted">
+              A letra desta faixa ainda não foi publicada. Assista ao vídeo ao lado — e se
+              quiser contribuir com a letra, escreva para{" "}
+              <a
+                href="mailto:contato@netfor.com.br"
+                className="text-link underline underline-offset-4"
+              >
+                contato@netfor.com.br
+              </a>
+              .
+            </p>
+          )}
         </div>
       </div>
 

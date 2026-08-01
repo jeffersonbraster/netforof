@@ -62,9 +62,10 @@ async function seed() {
     ])
     .onConflictDoNothing({ target: articles.originalUrl });
 
-  // Catálogo curado vive em ./data/cantos.ts, mantido à mão. Só entra faixa com
-  // letra preenchida — seed sem letra criaria página vazia no site.
-  const cantosComLetra = CANTOS.filter((c) => c.lyrics.trim().length > 0);
+  // Catálogo curado vive em ./data/cantos.ts, mantido à mão pelo dono do portal.
+  // A faixa entra com o vídeo mesmo sem letra: o player já é conteúdo útil, e a
+  // letra pode ser preenchida depois sem tocar em mais nada.
+  const cantosComLetra = CANTOS;
   if (cantosComLetra.length > 0) {
     await db
       .insert(chants)
