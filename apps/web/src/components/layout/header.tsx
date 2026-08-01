@@ -1,80 +1,98 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { SearchDialog } from "@/components/search/search-dialog";
+import { formatKickoff } from "@/lib/format";
+import type { Match } from "@netfor/db";
+
 import { ThemeToggle } from "./theme-toggle";
+
+/**
+ * N6 · Masthead de jornal.
+ *
+ * O header anterior era N1a (wordmark + links inline + botão de ícone à direita)
+ * — a assinatura de IA mais reconhecível que existe, e a lupa nem buscava nada.
+ *
+ * O masthead troca isso por linguagem de jornal esportivo: régua vermelha grossa,
+ * wordmark ancorado à esquerda e, no lugar da data de edição, a **linha de estado
+ * do clube**. É o que dá vida diária ao portal — quem abre vê o Leão antes de ver
+ * qualquer manchete.
+ */
 
 const navLinks = [
   { href: "/noticias", label: "Notícias" },
   { href: "/agenda", label: "Agenda" },
   { href: "/classificacao", label: "Classificação" },
-  { href: "/cantos-da-torcida", label: "Cantos da Torcida" },
   { href: "/videos", label: "Vídeos" },
+  { href: "/cantos-da-torcida", label: "Cantos" },
 ];
 
-export function Header() {
+function LinhaDeJogo({ proximo }: { proximo: Match | null }) {
+  if (!proximo) {
+    return <span className="text-muted">Acompanhe o Leão do Pici · 24 horas por dia</span>;
+  }
+
+  const emCasa = proximo.homeTeam.includes("Fortaleza");
+  const adversario = emCasa ? proximo.awayTeam : proximo.homeTeam;
+
   return (
-    <header className="sticky top-0 z-50 border-b border-line bg-background/75 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
+    <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+      <span className="bg-primary px-1.5 font-bold tracking-wide text-white uppercase">
+        Próximo jogo
+      </span>
+      <span className="font-semibold text-foreground">Fortaleza × {adversario}</span>
+      <span className="text-muted">
+        {formatKickoff(proximo.kickoffAt)} · {emCasa ? "em casa" : "fora"}
+      </span>
+    </span>
+  );
+}
+
+export function Header({ proximoJogo = null }: { proximoJogo?: Match | null }) {
+  return (
+    <header className="border-b-[3px] border-primary bg-background">
+      {/* Linha de estado: o "issue line" do masthead, virado para o clube. */}
+      <div className="border-b border-line">
+        <div className="mx-auto flex min-h-8 max-w-6xl items-center px-4 py-1 text-[11px] tracking-wide">
+          <LinhaDeJogo proximo={proximoJogo} />
+        </div>
+      </div>
+
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
         <Link href="/" aria-label="NETFOR — Início" className="shrink-0">
           <Image
             src="/netfor.svg"
             alt="NETFOR"
-            width={110}
-            height={30}
+            width={132}
+            height={36}
             priority
             className="hidden dark:block"
           />
           <Image
             src="/netfor-blue.svg"
             alt="NETFOR"
-            width={110}
-            height={30}
+            width={132}
+            height={36}
             priority
             className="dark:hidden"
           />
         </Link>
 
-        <nav aria-label="Principal" className="hidden md:block">
-          <ul className="flex items-center gap-6 text-sm font-medium text-muted">
-            {navLinks.map((link) => (
-              <li key={link.href}>
-                <Link href={link.href} className="transition-colors hover:text-foreground">
-                  {link.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-
         <div className="flex items-center gap-2">
-          <Link
-            href="/noticias"
-            aria-label="Buscar notícias"
-            className="flex size-9 items-center justify-center rounded-lg border border-line bg-surface text-muted transition-colors hover:border-primary/50 hover:text-foreground"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              className="size-4"
-              aria-hidden
-            >
-              <circle cx="11" cy="11" r="7" />
-              <path d="m21 21-4.3-4.3" />
-            </svg>
-          </Link>
+          <SearchDialog />
           <ThemeToggle />
         </div>
       </div>
 
-      {/* Nav mobile: trilho horizontal com scroll, sem JS */}
-      <nav aria-label="Principal (mobile)" className="border-t border-line md:hidden">
-        <ul className="scrollbar-none flex items-center gap-5 overflow-x-auto px-4 py-2 text-sm font-medium whitespace-nowrap text-muted">
+      {/* Trilho de seções: rola no mobile, sem JS. */}
+      <nav aria-label="Seções" className="border-t border-line">
+        <ul className="scrollbar-none mx-auto flex max-w-6xl items-center gap-6 overflow-x-auto px-4 font-display text-sm font-bold tracking-wide whitespace-nowrap uppercase">
           {navLinks.map((link) => (
             <li key={link.href}>
-              <Link href={link.href} className="transition-colors hover:text-foreground">
+              <Link
+                href={link.href}
+                className="inline-block border-b-2 border-transparent py-2.5 text-muted transition-colors hover:border-primary hover:text-foreground"
+              >
                 {link.label}
               </Link>
             </li>

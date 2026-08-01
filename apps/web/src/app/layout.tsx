@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Archivo, Inter } from "next/font/google";
+import { Barlow_Condensed, Inter } from "next/font/google";
 
 import Script from "next/script";
 
@@ -7,6 +7,7 @@ import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
 import { ADSENSE_CLIENT } from "@/lib/ads";
 import { GOOGLE_SITE_VERIFICATION, JsonLd, SITE_NAME, SITE_URL, webSiteJsonLd } from "@/lib/seo";
+import { getProximoJogo } from "@/modules/matches/queries";
 
 import "./globals.css";
 
@@ -16,9 +17,10 @@ const inter = Inter({
   display: "swap",
 });
 
-const archivo = Archivo({
+const barlowCondensed = Barlow_Condensed({
   subsets: ["latin"],
-  variable: "--font-archivo",
+  weight: ["600", "700", "800"],
+  variable: "--font-display-face",
   display: "swap",
 });
 
@@ -49,17 +51,19 @@ export const metadata: Metadata = {
 
 const themeInitScript = `(function(){try{var t=localStorage.getItem("netfor-theme");document.documentElement.dataset.theme=t==="light"?"light":"dark";}catch(e){document.documentElement.dataset.theme="dark";}})();`;
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const proximoJogo = await getProximoJogo();
+
   return (
     <html
       lang="pt-BR"
       data-theme="dark"
       suppressHydrationWarning
-      className={`${inter.variable} ${archivo.variable} h-full antialiased`}
+      className={`${inter.variable} ${barlowCondensed.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
@@ -72,7 +76,7 @@ export default function RootLayout({
         >
           Pular para o conteúdo
         </a>
-        <Header />
+        <Header proximoJogo={proximoJogo} />
         <main id="conteudo" tabIndex={-1} className="flex-1">
           {children}
         </main>

@@ -47,16 +47,27 @@ export default async function Home() {
       <MatchTicker matches={tickerMatches} />
 
       <div className="mx-auto max-w-6xl space-y-10 px-4 py-8">
+        {/* Superfície 1 — a manchete. Sem título de seção: capa de jornal não
+            anuncia "destaques", ela mostra a manchete e pronto. */}
         {hero && (
-          <section aria-label="Destaques">
-            <SectionTitle>Destaques</SectionTitle>
-            <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
+          <section aria-label="Manchete">
+            <div className="grid gap-5 lg:grid-cols-[1.7fr_1fr]">
               <HeroCard article={hero} />
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                {secondary.map((article) => (
-                  <CompactCard key={article.id} article={article} />
+              <ol className="divide-y divide-line border-t border-line">
+                {secondary.map((article, i) => (
+                  <li key={article.id} className="flex gap-3 py-3">
+                    <span
+                      className="font-display text-2xl leading-none font-black text-primary-text/70 tabular-nums"
+                      aria-hidden
+                    >
+                      {String(i + 2).padStart(2, "0")}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <CompactCard article={article} />
+                    </div>
+                  </li>
                 ))}
-              </div>
+              </ol>
             </div>
           </section>
         )}
@@ -92,11 +103,11 @@ export default async function Home() {
           </SectionTitle>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {recentResults.map((match) => (
-              <div key={match.id} className="rounded-xl border border-line bg-surface p-5">
+              <div key={match.id} className="border-t-[3px] border-secondary bg-surface p-5">
                 <p className="mb-3 text-[11px] font-medium tracking-wide text-muted uppercase">
                   {match.competition}
                 </p>
-                <p className="font-display text-lg font-bold">
+                <p className="font-display text-2xl leading-tight font-extrabold tabular-nums">
                   {match.homeTeam} <span className="text-primary-text">{match.homeScore}</span> ×{" "}
                   <span className="text-primary-text">{match.awayScore}</span> {match.awayTeam}
                 </p>

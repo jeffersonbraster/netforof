@@ -27,7 +27,7 @@ function CardImage({
 
 export function NewsCard({ article }: { article: ArticleCard }) {
   return (
-    <article className="group overflow-hidden rounded-xl border border-line bg-surface transition-colors hover:border-primary/40">
+    <article className="group overflow-hidden rounded-[--radius-card] border border-line bg-surface transition-colors hover:border-primary">
       <Link href={`/noticias/${article.slug}`} className="block">
         <div className="relative aspect-video overflow-hidden">
           <CardImage article={article} sizes="(max-width: 768px) 100vw, 400px" />
@@ -37,7 +37,7 @@ export function NewsCard({ article }: { article: ArticleCard }) {
             {article.category && <Badge variant="category">{article.category}</Badge>}
             <Badge variant="source">{article.sourceName}</Badge>
           </div>
-          <h3 className="font-display text-base leading-snug font-bold group-hover:text-primary-text">
+          <h3 className="font-display text-xl leading-[1.15] font-bold tracking-tight group-hover:text-primary-text">
             {article.title}
           </h3>
           <p className="line-clamp-2 text-sm leading-relaxed text-muted">{article.excerpt}</p>
@@ -50,7 +50,7 @@ export function NewsCard({ article }: { article: ArticleCard }) {
 
 export function HeroCard({ article }: { article: ArticleCard }) {
   return (
-    <article className="group relative overflow-hidden rounded-xl border border-line">
+    <article className="group relative overflow-hidden rounded-[--radius-card] border-l-[3px] border-primary">
       <Link href={`/noticias/${article.slug}`} className="block">
         <div className="relative aspect-video overflow-hidden sm:aspect-[16/10]">
           <CardImage article={article} sizes="(max-width: 1024px) 100vw, 640px" priority />
@@ -61,7 +61,7 @@ export function HeroCard({ article }: { article: ArticleCard }) {
             {article.category && <Badge variant="category">{article.category}</Badge>}
             <Badge variant="source">{article.sourceName}</Badge>
           </div>
-          <h2 className="font-display text-xl leading-tight font-extrabold text-white sm:text-2xl">
+          <h2 className="font-display text-3xl leading-[1.05] font-extrabold tracking-tight text-white sm:text-5xl">
             {article.title}
           </h2>
           <p className="line-clamp-2 max-w-xl text-sm text-white/75">{article.excerpt}</p>
@@ -75,11 +75,11 @@ export function CompactCard({ article }: { article: ArticleCard }) {
   return (
     <article className="group">
       <Link href={`/noticias/${article.slug}`} className="flex gap-3">
-        <div className="relative aspect-video w-28 shrink-0 overflow-hidden rounded-lg border border-line">
+        <div className="relative aspect-video w-28 shrink-0 overflow-hidden rounded-[--radius-card] border border-line">
           <CardImage article={article} sizes="112px" />
         </div>
         <div className="min-w-0 space-y-1">
-          <h3 className="line-clamp-2 text-sm leading-snug font-semibold group-hover:text-primary-text">
+          <h3 className="font-display line-clamp-2 text-base leading-snug font-bold group-hover:text-primary-text">
             {article.title}
           </h3>
           <p className="text-xs text-muted">

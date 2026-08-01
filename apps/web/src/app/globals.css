@@ -44,7 +44,31 @@
   --color-secondary: var(--brand-blue);
   --color-link: var(--link);
   --font-sans: var(--font-inter);
-  --font-display: var(--font-archivo);
+  --font-display: var(--font-display-face);
+
+  /* Vocabulário de forma por função — antes tudo era o mesmo retângulo macio.
+     Cartão quase reto (cara de impresso), faixa reta, pílula só em badge. */
+  --radius-card: 4px;
+  --radius-pill: 999px;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Display condensado quer tracking negativo e caixa alta nas manchetes de seção. */
+.font-display {
+  letter-spacing: -0.01em;
+}
+
+/* Placar e tabela não podem dançar quando o número muda. */
+.tabular-nums,
+[class*="tabular"] {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Régua da marca: sólida e reta, não barrinha arredondada.
+   Usada no lugar do <span> pill que se repetia em toda seção. */
+.regua-marca {
+  border-left: 3px solid var(--brand-red);
+  padding-left: 0.625rem;
 }
 
 html {

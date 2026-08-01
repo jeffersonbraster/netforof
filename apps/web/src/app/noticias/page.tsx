@@ -53,10 +53,10 @@ async function NewsList({ searchParams }: { searchParams: SearchParams }) {
   return (
     <>
       {/* Filtros por categoria e fonte (diferencial 4 do plano) */}
-      <div className="mb-6 space-y-3">
+      <div className="mb-8 space-y-3 border-y border-line py-4">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-semibold tracking-wide text-muted uppercase">
-            Categoria:
+          <span className="font-display text-xs font-bold tracking-wide text-muted uppercase">
+            Categoria
           </span>
           <Link href={`/noticias${buildQuery({ fonte: sourceSlug })}`}>
             <Badge variant={category === null ? "live" : "neutral"}>Todas</Badge>
@@ -68,7 +68,7 @@ async function NewsList({ searchParams }: { searchParams: SearchParams }) {
           ))}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-semibold tracking-wide text-muted uppercase">Fonte:</span>
+          <span className="font-display text-xs font-bold tracking-wide text-muted uppercase">Fonte</span>
           <Link href={`/noticias${buildQuery({ categoria: category })}`}>
             <Badge variant={sourceSlug === null ? "live" : "neutral"}>Todas</Badge>
           </Link>

@@ -32,6 +32,25 @@ export async function getTickerMatches(): Promise<Match[]> {
   return [...lastFinished, ...upcoming];
 }
 
+/**
+ * Próximo jogo, para a linha de estado do masthead. Fica em "hours" pela mesma
+ * razão do ticker: o corte usa `now`, então envelhece sozinho.
+ */
+export async function getProximoJogo(): Promise<Match | null> {
+  "use cache";
+  cacheTag("matches");
+  cacheLife("hours");
+
+  const [proximo] = await db
+    .select()
+    .from(matches)
+    .where(gte(matches.kickoffAt, new Date()))
+    .orderBy(asc(matches.kickoffAt))
+    .limit(1);
+
+  return proximo ?? null;
+}
+
 /** Também depende de `now` para separar agenda de resultados — ver getTickerMatches. */
 export async function getAgenda(): Promise<{ upcoming: Match[]; results: Match[] }> {
   "use cache";

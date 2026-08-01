@@ -1,0 +1,14 @@
+[
+  {
+    "date": "2026-08-01",
+    "scope": "app",
+    "macrostructure": "Ecosystem Index (home) · Index-First (listagem) · Long Document (matéria)",
+    "theme": "custom — tricolor do Fortaleza",
+    "theme_axes": "light+dark / display-condensed / warm (vermelho) + cool (azul)",
+    "nav": "N6 masthead",
+    "footer": "Ft5 statement",
+    "enrichment": "none — tipografia carrega",
+    "design-system": "design.md",
+    "brief": "NETFOR · redesign esportivo, navbar/home/listagem/componentes + busca real"
+  }
+]

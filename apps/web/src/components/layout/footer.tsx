@@ -2,15 +2,6 @@ import { cacheLife } from "next/cache";
 import Image from "next/image";
 import Link from "next/link";
 
-const sections = [
-  { href: "/noticias", label: "Notícias" },
-  { href: "/agenda", label: "Agenda de jogos" },
-  { href: "/classificacao", label: "Classificação" },
-  { href: "/cantos-da-torcida", label: "Cantos da torcida" },
-  { href: "/videos", label: "Vídeos" },
-  { href: "/sobre", label: "Sobre o NETFOR" },
-];
-
 function InstagramIcon() {
   return (
     <svg
@@ -86,58 +77,50 @@ async function CopyrightYear() {
   return <>{new Date().getFullYear()}</>;
 }
 
+/**
+ * Ft5 · Statement.
+ *
+ * O rodapé anterior era Ft3 — quatro colunas de links + fileira de social +
+ * copyright miúdo. É a segunda assinatura de IA mais reconhecível, e ninguém
+ * navega por ali: o trilho do masthead já cobre as seções.
+ *
+ * Aqui uma frase display fecha a página e os links viram uma linha só.
+ */
 export function Footer() {
   return (
-    <footer className="mt-12 border-t border-line bg-surface">
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-10 sm:grid-cols-2 lg:grid-cols-3">
-        <div className="space-y-4">
-          <Image
-            src="/netfor.svg"
-            alt="NETFOR"
-            width={120}
-            height={33}
-            className="hidden dark:block"
-          />
-          <Image
-            src="/netfor-blue.svg"
-            alt="NETFOR"
-            width={120}
-            height={33}
-            className="dark:hidden"
-          />
-          <p className="text-sm leading-relaxed text-muted">
-            O portal tem como objetivo manter todos os torcedores e amantes do Fortaleza informados
-            sobre tudo que acontece no clube, buscando informações nas principais fontes de notícias
-            sobre o Maior time do Nordeste e do mundo!!
-          </p>
-          <p className="text-sm text-muted">
-            Para sugestões, dicas ou informações entre em contato pelo e-mail{" "}
-            <a
-              href="mailto:contato@netfor.com.br"
-              className="text-link underline underline-offset-4 hover:text-foreground"
-            >
-              contato@netfor.com.br
-            </a>
-          </p>
-        </div>
+    <footer className="mt-16 border-t-[3px] border-primary bg-surface">
+      <div className="mx-auto max-w-6xl px-4 py-14">
+        <p className="font-display max-w-3xl text-4xl leading-[1.05] font-extrabold tracking-tight uppercase sm:text-6xl">
+          Todas as notícias do <span className="text-primary-text">Leão</span> em um só lugar.
+        </p>
 
-        <nav aria-label="Seções">
-          <h3 className="mb-3 font-display text-sm font-bold uppercase tracking-wide">Seções</h3>
-          <ul className="space-y-2 text-sm text-muted">
-            {sections.map((s) => (
-              <li key={s.href}>
-                <Link href={s.href} className="transition-colors hover:text-foreground">
-                  {s.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
+        <div className="mt-10 flex flex-wrap items-end justify-between gap-x-8 gap-y-6">
+          <div>
+            <Image
+              src="/netfor.svg"
+              alt="NETFOR"
+              width={120}
+              height={33}
+              className="hidden dark:block"
+            />
+            <Image
+              src="/netfor-blue.svg"
+              alt="NETFOR"
+              width={120}
+              height={33}
+              className="dark:hidden"
+            />
+            <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted">
+              Sugestões, dicas ou correções:{" "}
+              <a
+                href="mailto:contato@netfor.com.br"
+                className="text-link underline underline-offset-4 hover:text-foreground"
+              >
+                contato@netfor.com.br
+              </a>
+            </p>
+          </div>
 
-        <div>
-          <h3 className="mb-3 font-display text-sm font-bold uppercase tracking-wide">
-            Siga o NETFOR
-          </h3>
           <ul className="flex items-center gap-3">
             {socials.map((social) => (
               <li key={social.label}>
@@ -147,7 +130,7 @@ export function Footer() {
                   rel="noopener noreferrer"
                   aria-label={social.label}
                   title={social.label}
-                  className="flex size-10 items-center justify-center rounded-lg border border-line bg-surface-2/60 text-muted transition-colors hover:border-primary/50 hover:text-foreground"
+                  className="flex size-10 items-center justify-center border border-line text-muted transition-colors hover:border-primary hover:text-foreground"
                 >
                   {social.icon}
                 </a>
@@ -158,16 +141,19 @@ export function Footer() {
       </div>
 
       <div className="border-t border-line">
-        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-4 text-center text-xs text-muted sm:flex-row sm:items-center sm:justify-between sm:text-left">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-4 text-xs text-muted">
           <p>
-            © <CopyrightYear /> NETFOR
+            © <CopyrightYear /> NETFOR · Portal independente, sem vínculo oficial com o Fortaleza EC
           </p>
-          <p className="space-x-4">
+          <p className="flex gap-4">
+            <Link href="/sobre" className="transition-colors hover:text-foreground">
+              Sobre
+            </Link>
             <Link href="/privacidade" className="transition-colors hover:text-foreground">
               Privacidade
             </Link>
             <Link href="/termos" className="transition-colors hover:text-foreground">
-              Termos de Uso
+              Termos
             </Link>
           </p>
         </div>
