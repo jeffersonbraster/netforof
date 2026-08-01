@@ -115,6 +115,22 @@ html {
   border-radius: 2px;
 }
 
+/* Dia de jogo: o cartão ao vivo pulsa de leve para puxar o olho sem piscar.
+   Anima só `box-shadow`, que não causa reflow. */
+@keyframes pulso-ao-vivo {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(225 29 46 / 0.55);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgb(225 29 46 / 0);
+  }
+}
+
+.ao-vivo {
+  animation: pulso-ao-vivo 2s var(--ease-out) infinite;
+}
+
 /* Respeita quem pediu menos movimento no sistema (WCAG 2.3.3). */
 @media (prefers-reduced-motion: reduce) {
   html {

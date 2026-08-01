@@ -43,7 +43,14 @@ const competitionNames: Record<string, string> = {
 
 interface EspnCompetitor {
   homeAway?: string;
-  team?: { displayName?: string; logos?: Array<{ href?: string }> };
+  team?: {
+    displayName?: string;
+    /** `schedule` devolve a lista… */
+    logos?: Array<{ href?: string }>;
+    /** …e `scoreboard` devolve o campo singular. Sem tratar os dois, os jogos
+     *  futuros ficavam sem escudo. */
+    logo?: string;
+  };
   score?: { value?: number };
 }
 
@@ -72,6 +79,10 @@ interface EspnStandingsResponse {
       }>;
     };
   }>;
+}
+
+function escudo(competidor: EspnCompetitor | undefined): string | null {
+  return competidor?.team?.logos?.[0]?.href ?? competidor?.team?.logo ?? null;
 }
 
 function mapStatus(state: string | undefined): "scheduled" | "live" | "finished" {
@@ -143,8 +154,8 @@ async function syncMatches(db: Db): Promise<number> {
       round: null,
       homeTeam: home.team?.displayName ?? "?",
       awayTeam: away.team?.displayName ?? "?",
-      homeLogo: home.team?.logos?.[0]?.href ?? null,
-      awayLogo: away.team?.logos?.[0]?.href ?? null,
+      homeLogo: escudo(home),
+      awayLogo: escudo(away),
       homeScore: status === "scheduled" ? null : (home.score?.value ?? null),
       awayScore: status === "scheduled" ? null : (away.score?.value ?? null),
       stadium: comp?.venue?.fullName ?? null,

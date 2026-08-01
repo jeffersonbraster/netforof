@@ -1,6 +1,6 @@
 "use server";
 
-import { articles, eq } from "@netfor/db";
+import { articles, eq, matches } from "@netfor/db";
 import { revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -119,4 +119,43 @@ export async function criarMateria(dados: FormData): Promise<void> {
 
   revalidateTag("articles", "max");
   redirect(`/admin/materia/${id}?salvo=1`);
+}
+
+/**
+ * Placar manual — rede de segurança para dia de jogo.
+ *
+ * A coleta da ESPN roda por cron e o GitHub estrangula agendamento em
+ * repositório público, então o placar pode atrasar justamente quando mais
+ * importa. Aqui o operador corrige na hora.
+ *
+ * O valor gravado à mão sobrevive: a coleta seguinte sobrescreve com o dado da
+ * ESPN quando ela finalmente atualiza — o que é o comportamento desejado, já
+ * que a fonte oficial é mais confiável que a digitação às pressas.
+ */
+export async function salvarPlacar(dados: FormData): Promise<void> {
+  await exigirSessao();
+
+  const id = Number(dados.get("id"));
+  if (!Number.isInteger(id)) return;
+
+  const numero = (campo: string): number | null => {
+    const bruto = String(dados.get(campo) ?? "").trim();
+    if (bruto === "") return null;
+    const n = Number.parseInt(bruto, 10);
+    return Number.isInteger(n) && n >= 0 && n <= 99 ? n : null;
+  };
+
+  const estado = String(dados.get("estado") ?? "");
+  const valido = ["scheduled", "live", "finished"] as const;
+  const status = (valido as readonly string[]).includes(estado)
+    ? (estado as (typeof valido)[number])
+    : "scheduled";
+
+  await db
+    .update(matches)
+    .set({ homeScore: numero("homeScore"), awayScore: numero("awayScore"), status })
+    .where(eq(matches.id, id));
+
+  revalidateTag("matches", "max");
+  redirect("/admin/jogos?salvo=1");
 }

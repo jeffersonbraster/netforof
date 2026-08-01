@@ -62,6 +62,12 @@ async function Painel({ searchParams }: { searchParams: Busca }) {
         <h1 className="font-display text-2xl font-extrabold">Painel NETFOR</h1>
         <div className="flex items-center gap-3">
           <Link
+            href="/admin/jogos"
+            className="h-9 rounded-lg border border-line px-4 text-sm leading-9 font-medium hover:border-primary/50"
+          >
+            Jogos
+          </Link>
+          <Link
             href="/admin/materia/nova"
             className="h-9 rounded-lg bg-primary px-4 text-sm leading-9 font-semibold text-white"
           >

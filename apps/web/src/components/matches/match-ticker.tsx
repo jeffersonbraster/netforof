@@ -46,7 +46,11 @@ function MatchCard({ match }: { match: Match }) {
   const live = match.status === "live";
   const showScore = finished || live;
   return (
-    <div className="w-64 shrink-0 snap-start rounded-xl border border-line bg-surface p-4">
+    <div
+      className={`w-64 shrink-0 snap-start rounded-[--radius-card] border bg-surface p-4 ${
+        live ? "ao-vivo border-primary" : "border-line"
+      }`}
+    >
       <div className="mb-3 flex items-center justify-between gap-2">
         <span className="truncate text-[11px] font-medium tracking-wide text-muted uppercase">
           {match.competition}

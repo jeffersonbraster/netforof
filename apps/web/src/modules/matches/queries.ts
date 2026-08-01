@@ -1,4 +1,4 @@
-import { asc, desc, eq, gte, lt, ne, matches, standings, type Match, type Standing } from "@netfor/db";
+import { and, asc, desc, eq, gte, lt, ne, matches, standings, type Match, type Standing } from "@netfor/db";
 import { cacheLife, cacheTag } from "next/cache";
 
 import { db } from "@/lib/db";
@@ -14,23 +14,27 @@ export async function getTickerMatches(): Promise<Match[]> {
   cacheLife("hours");
 
   const now = new Date();
-  // Um resultado à esquerda para ancorar, três jogos à frente para a expectativa.
+  // Regra: o último resultado só fica enquanto ainda é notícia. Logo após o
+  // apito é o que todo mundo quer ver; três dias depois é peso morto ocupando a
+  // primeira posição. Passadas 48h, a faixa fica só com o que vem pela frente.
+  const aindaQuente = new Date(now.getTime() - 48 * 60 * 60 * 1000);
+
   const [upcoming, lastFinished] = await Promise.all([
     db
       .select()
       .from(matches)
       .where(gte(matches.kickoffAt, now))
       .orderBy(asc(matches.kickoffAt))
-      .limit(3),
+      .limit(4),
     db
       .select()
       .from(matches)
-      .where(lt(matches.kickoffAt, now))
+      .where(and(lt(matches.kickoffAt, now), gte(matches.kickoffAt, aindaQuente)))
       .orderBy(desc(matches.kickoffAt))
       .limit(1),
   ]);
 
-  return [...lastFinished, ...upcoming];
+  return [...lastFinished, ...upcoming].slice(0, 4);
 }
 
 /**
@@ -60,7 +64,14 @@ export async function getAgenda(): Promise<{ upcoming: Match[]; results: Match[]
 
   const now = new Date();
   const [upcoming, results] = await Promise.all([
-    db.select().from(matches).where(gte(matches.kickoffAt, now)).orderBy(asc(matches.kickoffAt)),
+    // Seis é o horizonte útil: cobre cerca de um mês de calendário sem virar
+    // rolagem infinita.
+    db
+      .select()
+      .from(matches)
+      .where(gte(matches.kickoffAt, now))
+      .orderBy(asc(matches.kickoffAt))
+      .limit(6),
     db
       .select()
       .from(matches)

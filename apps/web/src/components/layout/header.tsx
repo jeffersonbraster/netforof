@@ -6,6 +6,7 @@ import { SearchDialog } from "@/components/search/search-dialog";
 import { formatKickoff } from "@/lib/format";
 import type { Match } from "@netfor/db";
 
+import { MobileMenu } from "./mobile-menu";
 import { SiteNav } from "./site-nav";
 import { ThemeToggle } from "./theme-toggle";
 
@@ -75,6 +76,9 @@ export function Header({ proximoJogo = null }: { proximoJogo?: Match | null }) {
 
         <div className="flex items-center gap-2">
           <SearchDialog />
+          <Suspense fallback={<div className="size-9 md:hidden" />}>
+            <MobileMenu />
+          </Suspense>
           <ThemeToggle />
         </div>
       </div>
