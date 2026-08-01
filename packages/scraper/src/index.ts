@@ -12,6 +12,7 @@ import { fortaleza1918 } from "./sources/fortaleza1918";
 import { geGlobo } from "./sources/ge-globo";
 import { oPovo } from "./sources/opovo";
 import { souFortaleza } from "./sources/sou-fortaleza";
+import { trivela } from "./sources/trivela";
 import type { NewsSource, SourceRunSummary } from "./types";
 
 const allSources: NewsSource[] = [
@@ -21,6 +22,7 @@ const allSources: NewsSource[] = [
   souFortaleza,
   oPovo,
   espn,
+  trivela,
 ];
 
 async function main() {

@@ -3,7 +3,10 @@ name: Scraper de notícias
 on:
   schedule:
     # A cada 20 min (GitHub não garante pontualidade exata — ok p/ notícias)
-    - cron: "*/20 * * * *"
+    # De hora em hora entre 8h e 23h (BRT = UTC-3), pausado de madrugada.
+    # Portal de futebol não publica às 4 da manhã, e cada rodada custa chamada
+    # de IA na reescrita. 16 coletas/dia cobrem o noticiário sem desperdício.
+    - cron: "0 11-23,0-2 * * *"
   workflow_dispatch:
 
 concurrency:

@@ -256,6 +256,57 @@ export async function getDestaquesDoDia(limite = 4): Promise<ArticleCard[]> {
   return dedupeByHash(rows).slice(0, limite);
 }
 
+/**
+ * Recirculação no fim da matéria.
+ *
+ * Mistura deliberada: primeiro as da MESMA categoria (quem leu sobre mercado
+ * quer mais mercado), completando com as mais recentes. Só categoria produz
+ * fundo de poço em categoria pequena; só recência ignora o interesse demonstrado.
+ */
+export async function getRecirculacao(
+  slugAtual: string,
+  categoria: string | null,
+  limite = 4,
+): Promise<ArticleCard[]> {
+  "use cache";
+  cacheTag("articles");
+  cacheLife("days");
+
+  const base = and(
+    eq(articles.status, "published"),
+    isNotNull(articles.content),
+    ne(articles.slug, slugAtual),
+  );
+
+  const mesmaCategoria = categoria
+    ? await db
+        .select({ ...cardColumns, contentHash: articles.contentHash })
+        .from(articles)
+        .innerJoin(sources, eq(articles.sourceId, sources.id))
+        .where(and(base, eq(articles.category, categoria)))
+        .orderBy(desc(articles.publishedAt))
+        .limit(limite)
+    : [];
+
+  const recentes = await db
+    .select({ ...cardColumns, contentHash: articles.contentHash })
+    .from(articles)
+    .innerJoin(sources, eq(articles.sourceId, sources.id))
+    .where(base)
+    .orderBy(desc(articles.publishedAt))
+    .limit(limite * 3);
+
+  const vistos = new Set<number>();
+  const saida: typeof recentes = [];
+  for (const item of [...mesmaCategoria, ...recentes]) {
+    if (vistos.has(item.id)) continue;
+    vistos.add(item.id);
+    saida.push(item);
+    if (saida.length >= limite) break;
+  }
+  return dedupeByHash(saida).slice(0, limite);
+}
+
 export interface MostReadItem {
   title: string;
   slug: string;

@@ -19,10 +19,9 @@ export default function TermosPage() {
         <section className="space-y-2">
           <h2 className="font-display text-base font-bold">1. O serviço</h2>
           <p>
-            O NETFOR é um portal de notícias sobre o Fortaleza Esporte Clube. Publicamos{" "}
-            <strong>conteúdo de nossa autoria</strong> e creditamos as fontes das informações
-            quando aplicável. O portal é independente e{" "}
-            <strong>não possui vínculo oficial com o Fortaleza EC</strong>.
+            O NETFOR é um portal de notícias sobre o Fortaleza Esporte Clube. Todo o conteúdo
+            editorial publicado aqui é <strong>de nossa autoria</strong>. O portal é independente
+            e <strong>não possui vínculo oficial com o Fortaleza EC</strong>.
           </p>
         </section>
 

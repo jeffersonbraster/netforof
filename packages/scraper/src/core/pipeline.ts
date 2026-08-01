@@ -97,6 +97,11 @@ export async function runSource(db: Db, source: NewsSource): Promise<SourceRunSu
         category: item.category,
         publishedAt: publishedAt ?? new Date(),
         contentHash: hash,
+        // Nasce como rascunho: no Modo B a matéria só vai ao ar com texto
+        // próprio, depois da reescrita e da revisão. Publicar direto colocaria
+        // resumo de terceiro numa página indexável — exatamente o que o Modo B
+        // existe para evitar.
+        status: "draft" as const,
       })
       .onConflictDoNothing({ target: articles.originalUrl })
       .returning({ id: articles.id });

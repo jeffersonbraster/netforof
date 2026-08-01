@@ -24,11 +24,20 @@ export const MAX_SEQUENCIA_LITERAL = 14;
 export const MAX_RAZAO_8GRAMA = 0.18;
 
 /**
- * Acima disto o texto virou transcrição: citação é permitida, colcha de retalhos
- * de citações não é matéria própria. Fecha também a brecha de o modelo escapar
- * da trava embrulhando tudo entre aspas.
+ * Teto de citação — recalibrado com dado real.
+ *
+ * O limite de 40% reprovava matéria legítima: coletiva de imprensa e entrevista
+ * são naturalmente 40-55% de aspas, e três de oito matérias caíram por isso numa
+ * rodada. O teto sozinho é a métrica errada.
+ *
+ * A dupla certa: teto mais alto (60%) MAIS um piso de prosa própria. Assim uma
+ * matéria de entrevista passa, mas um texto que é só colcha de citações — a
+ * brecha de escapar da trava embrulhando tudo em aspas — não passa, porque não
+ * tem prosa própria suficiente.
  */
-export const MAX_PROPORCAO_CITADA = 0.4;
+export const MAX_PROPORCAO_CITADA = 0.6;
+/** Caracteres mínimos de texto NOSSO, fora das aspas. */
+export const MIN_PROSA_PROPRIA = 450;
 
 export interface Originalidade {
   maiorSequencia: number;
@@ -118,9 +127,13 @@ export function medirOriginalidade(novo: string, original: string): Originalidad
 
   const amostra = maior > 0 ? a.slice(Math.max(0, fimEmA - maior), fimEmA).join(" ") : null;
 
+  const prosaPropria = prosa.replace(/\s+/g, " ").trim().length;
+
   let motivo: string | null = null;
   if (proporcaoCitada > MAX_PROPORCAO_CITADA) {
     motivo = `${(proporcaoCitada * 100).toFixed(0)}% do texto é citação (limite ${(MAX_PROPORCAO_CITADA * 100).toFixed(0)}%)`;
+  } else if (prosaPropria < MIN_PROSA_PROPRIA) {
+    motivo = `só ${prosaPropria} caracteres de prosa própria (mínimo ${MIN_PROSA_PROPRIA})`;
   } else if (maior > MAX_SEQUENCIA_LITERAL) {
     motivo = `sequência literal de ${maior} palavras (limite ${MAX_SEQUENCIA_LITERAL})`;
   } else if (razao8grama > MAX_RAZAO_8GRAMA) {

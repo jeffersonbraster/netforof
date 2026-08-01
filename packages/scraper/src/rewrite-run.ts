@@ -7,6 +7,7 @@ import { and, articles, createDb, desc, eq, inArray, isNull, sources } from "@ne
 import { extractArticleText } from "./core/extract";
 import { criarProvedor, type MateriaReescrita, type ProvedorDeReescrita } from "./rewrite";
 import { medirOriginalidade } from "./rewrite/originalidade";
+import { checarMencaoDeVeiculo } from "./rewrite/veiculos";
 
 /**
  * Estágio de reescrita do Modo B.
@@ -66,6 +67,17 @@ async function reescreverComTrava(
       ...pedido,
       ...(tentativa > 1 ? { reforco: montarReforco(ultimoTrecho) } : {}),
     });
+
+    // Duas travas, na ordem do dano: mencionar veículo expõe a operação;
+    // copiar texto é risco autoral. Ambas reprovam e pedem nova tentativa.
+    const mencao = checarMencaoDeVeiculo(nova.titulo, nova.resumo, ...nova.paragrafos);
+    if (!mencao.limpo) {
+      ultimoTrecho = null;
+      aviso(
+        `menção a veículo (tentativa ${tentativa}): ${mencao.encontrados.join(", ")} — refazendo`,
+      );
+      continue;
+    }
 
     const medida = medirOriginalidade(paragrafosParaTexto(nova.paragrafos), pedido.textoOriginal);
     if (medida.aprovado) return nova;

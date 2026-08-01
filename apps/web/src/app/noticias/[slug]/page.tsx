@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { CompactCard } from "@/components/news/news-card";
+import { Recirculacao } from "@/components/news/recirculacao";
 import { ViewTracker } from "@/components/news/view-tracker";
 import { Badge } from "@/components/ui/badge";
 import { RemoteImage } from "@/components/ui/remote-image";
@@ -12,7 +13,12 @@ import { AdSlot } from "@/components/widgets/ad-slot";
 import { formatLongDate, formatShortDateTime } from "@/lib/format";
 import { FALLBACK_IMAGE } from "@/lib/images";
 import { breadcrumbJsonLd, JsonLd, SITE_URL } from "@/lib/seo";
-import { getArticleBySlug, getArticleDetail, getPublishedSlugs } from "@/modules/news/queries";
+import {
+  getArticleBySlug,
+  getArticleDetail,
+  getPublishedSlugs,
+  getRecirculacao,
+} from "@/modules/news/queries";
 
 type Params = Promise<{ slug: string }>;
 
@@ -57,7 +63,8 @@ async function ArticleBody({ slug }: { slug: string }) {
   const article = await getArticleDetail(slug);
   if (!article) notFound();
 
-  const daRedacao = article.sourceSlug === "netfor";
+  const recirculacao = await getRecirculacao(slug, article.category);
+
   const paragrafos = (article.content ?? "")
     .split(/\n\s*\n/)
     .map((p) => p.trim())
@@ -72,8 +79,6 @@ async function ArticleBody({ slug }: { slug: string }) {
     datePublished: article.publishedAt.toISOString(),
     inLanguage: "pt-BR",
     url: `${SITE_URL}/noticias/${article.slug}`,
-    // Fato apurado por terceiro: sinaliza a origem sem ceder a autoria do texto.
-    ...(daRedacao ? {} : { isBasedOn: article.originalUrl, citation: article.originalUrl }),
     author: { "@type": "Organization", name: "NETFOR", url: SITE_URL },
     dateModified: article.publishedAt.toISOString(),
     publisher: {
@@ -98,7 +103,6 @@ async function ArticleBody({ slug }: { slug: string }) {
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
         {article.category && <Badge variant="category">{article.category}</Badge>}
-        <Badge variant="source">{article.sourceName}</Badge>
       </div>
 
       <h1 className="font-display text-2xl leading-tight font-extrabold sm:text-3xl">
@@ -129,24 +133,6 @@ async function ArticleBody({ slug }: { slug: string }) {
         </div>
       )}
 
-      {/* Matéria da casa não tem fonte externa para creditar. */}
-      {!daRedacao && (
-        <div className="mt-8 rounded-xl border border-line bg-surface p-5">
-          <p className="text-sm text-muted">
-            Fato apurado por{" "}
-            <strong className="text-foreground">{article.sourceName}</strong>.
-          </p>
-          <a
-            href={article.originalUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-3 inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-white transition-colors hover:bg-primary/85"
-          >
-            Ver publicação original →
-          </a>
-        </div>
-      )}
-
       <div className="mt-8">
         <AdSlot format="leaderboard" />
       </div>
@@ -161,6 +147,8 @@ async function ArticleBody({ slug }: { slug: string }) {
           </div>
         </section>
       )}
+
+      <Recirculacao itens={recirculacao} />
 
       <p className="mt-10">
         <Link href="/noticias" className="text-sm text-link hover:underline underline-offset-4">

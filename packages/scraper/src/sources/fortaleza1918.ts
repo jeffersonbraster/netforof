@@ -1,3 +1,8 @@
+/**
+ * Site oficial do clube. `fortalezaec.net` é a mesma publicação — o feed de lá
+ * devolve links para fortaleza1918.com.br. Adicionar as duas gera 100% de
+ * duplicata.
+ */
 import { classifyCategory } from "../core/category";
 import { fetchText } from "../core/http";
 import { parseRss } from "../core/rss";
