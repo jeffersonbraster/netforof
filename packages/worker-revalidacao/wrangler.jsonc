@@ -1,0 +1,34 @@
+// Vigia do "próximo jogo". Worker separado do site de propósito: um erro aqui
+// não pode derrubar o portal, e o deploy de um não arrasta o do outro.
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "netfor-revalidacao",
+  "main": "src/index.ts",
+  // Data mais recente que o workerd empacotado no wrangler 4.115 aceita. Subir
+  // além disso quebra o `wrangler dev` com "newest date supported is ...".
+  "compatibility_date": "2026-07-29",
+  "compatibility_flags": ["nodejs_compat"],
+  "triggers": {
+    // A cada 15 min. É só uma leitura de KV por execução — o banco e a
+    // revalidação só entram quando um jogo de fato acabou. O intervalo define a
+    // precisão: o banner troca em até 15 min depois do fim da partida.
+    "crons": ["*/15 * * * *"]
+  },
+  "kv_namespaces": [
+    {
+      "binding": "ESTADO",
+      "id": "2fa767b2e87f4b9c9dcd7f26abe14756"
+    }
+  ],
+  "vars": {
+    "SITE_URL": "https://netfor.com.br"
+  },
+  // Sem isto o worker não grava log e a única pista de falha seria o banner
+  // parado. Foi a lição do Error 1101.
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  }
+  // Secrets em runtime (definir com `wrangler secret put`):
+  //   DATABASE_URL, REVALIDATE_SECRET
+}

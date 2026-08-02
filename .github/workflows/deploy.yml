@@ -42,3 +42,15 @@ jobs:
           NEXT_PUBLIC_ADSENSE_SLOT_RECTANGLE: ${{ vars.NEXT_PUBLIC_ADSENSE_SLOT_RECTANGLE }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      # Worker separado, com cron próprio. Vai junto para não virar código órfão:
+      # sem esta etapa, editar o vigia e dar push não publicaria nada, e a falha
+      # apareceria só como banner parado dias depois.
+      #
+      # `wrangler deploy` não apaga secrets já definidos, então DATABASE_URL e
+      # REVALIDATE_SECRET do worker seguem valendo sem passar por aqui.
+      - name: Deploy do vigia de revalidação
+        run: pnpm --filter @netfor/worker-revalidacao run deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
