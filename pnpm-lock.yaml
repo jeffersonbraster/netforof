@@ -4,6 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  next@16.2.12:
+    hash: 690283651f5e53d89e5aee2d7d7c689ae353bcb9f21e8a171c0e5b2ee7ee2ed2
+    path: patches/next@16.2.12.patch
+
 importers:
 
   .:
@@ -25,7 +30,7 @@ importers:
         version: 17.4.2
       next:
         specifier: 16.2.12
-        version: 16.2.12(@babel/core@7.29.7)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+        version: 16.2.12(patch_hash=690283651f5e53d89e5aee2d7d7c689ae353bcb9f21e8a171c0e5b2ee7ee2ed2)(@babel/core@7.29.7)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       react:
         specifier: 19.2.4
         version: 19.2.4
@@ -35,7 +40,7 @@ importers:
     devDependencies:
       '@opennextjs/cloudflare':
         specifier: ^1.20.2
-        version: 1.20.2(next@16.2.12(@babel/core@7.29.7)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(wrangler@4.115.0)
+        version: 1.20.2(next@16.2.12(patch_hash=690283651f5e53d89e5aee2d7d7c689ae353bcb9f21e8a171c0e5b2ee7ee2ed2)(@babel/core@7.29.7)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(wrangler@4.115.0)
       '@tailwindcss/postcss':
         specifier: ^4
         version: 4.3.3
@@ -5578,7 +5583,7 @@ snapshots:
 
   '@nolyfill/is-core-module@1.0.39': {}
 
-  '@opennextjs/aws@4.1.0(next@16.2.12(@babel/core@7.29.7)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))':
+  '@opennextjs/aws@4.1.0(next@16.2.12(patch_hash=690283651f5e53d89e5aee2d7d7c689ae353bcb9f21e8a171c0e5b2ee7ee2ed2)(@babel/core@7.29.7)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))':
     dependencies:
       '@ast-grep/napi': 0.40.5
       '@aws-sdk/client-cloudfront': 3.984.0
@@ -5594,24 +5599,24 @@ snapshots:
       cookie: 1.1.1
       esbuild: 0.25.4
       express: 5.2.1
-      next: 16.2.12(@babel/core@7.29.7)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      next: 16.2.12(patch_hash=690283651f5e53d89e5aee2d7d7c689ae353bcb9f21e8a171c0e5b2ee7ee2ed2)(@babel/core@7.29.7)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       path-to-regexp: 6.3.0
       urlpattern-polyfill: 10.1.0
       yaml: 2.9.0
     transitivePeerDependencies:
       - supports-color
 
-  '@opennextjs/cloudflare@1.20.2(next@16.2.12(@babel/core@7.29.7)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(wrangler@4.115.0)':
+  '@opennextjs/cloudflare@1.20.2(next@16.2.12(patch_hash=690283651f5e53d89e5aee2d7d7c689ae353bcb9f21e8a171c0e5b2ee7ee2ed2)(@babel/core@7.29.7)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(wrangler@4.115.0)':
     dependencies:
       '@ast-grep/napi': 0.40.5
       '@dotenvx/dotenvx': 1.31.0
-      '@opennextjs/aws': 4.1.0(next@16.2.12(@babel/core@7.29.7)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))
+      '@opennextjs/aws': 4.1.0(next@16.2.12(patch_hash=690283651f5e53d89e5aee2d7d7c689ae353bcb9f21e8a171c0e5b2ee7ee2ed2)(@babel/core@7.29.7)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))
       ci-info: 4.4.0
       cloudflare: 4.5.0
       comment-json: 4.6.2
       enquirer: 2.4.1
       glob: 12.0.0
-      next: 16.2.12(@babel/core@7.29.7)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      next: 16.2.12(patch_hash=690283651f5e53d89e5aee2d7d7c689ae353bcb9f21e8a171c0e5b2ee7ee2ed2)(@babel/core@7.29.7)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       ts-tqdm: 0.8.6
       wrangler: 4.115.0
       yargs: 18.1.0
@@ -7653,7 +7658,7 @@ snapshots:
 
   negotiator@1.0.0: {}
 
-  next@16.2.12(@babel/core@7.29.7)(react-dom@19.2.4(react@19.2.4))(react@19.2.4):
+  next@16.2.12(patch_hash=690283651f5e53d89e5aee2d7d7c689ae353bcb9f21e8a171c0e5b2ee7ee2ed2)(@babel/core@7.29.7)(react-dom@19.2.4(react@19.2.4))(react@19.2.4):
     dependencies:
       '@next/env': 16.2.12
       '@swc/helpers': 0.5.15
