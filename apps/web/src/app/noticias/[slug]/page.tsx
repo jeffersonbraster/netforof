@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { RemoteImage } from "@/components/ui/remote-image";
 import { SectionTitle } from "@/components/ui/section-title";
 import { AdSlot } from "@/components/widgets/ad-slot";
-import { formatLongDate, formatShortDateTime } from "@/lib/format";
+import { formatLongDateTime } from "@/lib/format";
 import { FALLBACK_IMAGE } from "@/lib/images";
 import { breadcrumbJsonLd, JsonLd, SITE_URL } from "@/lib/seo";
 import {
@@ -150,9 +150,13 @@ async function ArticleBody({ slug }: { slug: string }) {
         {article.title}
       </h1>
 
+      {/* <time> em vez de texto solto: é o que o Google lê como data de
+          publicação quando confere o JSON-LD com o corpo da página. */}
       <p className="mt-3 text-sm text-muted">
-        Publicada em {formatLongDate(article.publishedAt)} ·{" "}
-        {formatShortDateTime(article.publishedAt)}
+        Publicada em{" "}
+        <time dateTime={article.publishedAt.toISOString()}>
+          {formatLongDateTime(article.publishedAt)}
+        </time>
       </p>
 
       <div className="relative mt-6 aspect-video overflow-hidden rounded-xl border border-line">
