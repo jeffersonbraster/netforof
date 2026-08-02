@@ -2,9 +2,25 @@ import { config } from "dotenv";
 
 config({ path: new URL("../../../.env", import.meta.url).pathname });
 
-import { and, articles, createDb, desc, eq, inArray, isNull, lt, sql, sources } from "@netfor/db";
+import {
+  and,
+  articles,
+  count,
+  createDb,
+  desc,
+  eq,
+  inArray,
+  isNull,
+  lt,
+  publicacaoAutomaticaLigada,
+  sql,
+  sources,
+} from "@netfor/db";
 
 import { extractArticleText } from "./core/extract";
+import { notifyRevalidate } from "./core/revalidate";
+import { enviarTelegram } from "./core/telegram";
+import { type Escrita, montarAviso } from "./rewrite/aviso";
 import { criarProvedor, type MateriaReescrita, type ProvedorDeReescrita } from "./rewrite";
 import { medirOriginalidade } from "./rewrite/originalidade";
 import { checarMencaoDeVeiculo } from "./rewrite/veiculos";
@@ -160,10 +176,18 @@ async function main() {
   const backfill = process.env.REWRITE_BACKFILL === "1";
   const estados = backfill ? (["draft", "published"] as const) : (["draft"] as const);
 
+  /**
+   * O interruptor do painel decide onde a matéria pousa. É lido a cada rodada,
+   * não no boot, para que virar a chave valha na rodada seguinte sem redeploy.
+   */
+  const automatico = await publicacaoAutomaticaLigada(db);
+  const estadoFinal = automatico ? ("published" as const) : ("review" as const);
+
   const pendentes = await db
     .select({
       id: articles.id,
       titulo: articles.title,
+      slug: articles.slug,
       url: articles.originalUrl,
       veiculo: sources.name,
     })
@@ -180,9 +204,11 @@ async function main() {
     .limit(limite);
 
   console.log(
-    `Reescrita — ${provedor.nome}/${provedor.modelo} — ${pendentes.length} matéria(s) pendente(s)\n`,
+    `Reescrita — ${provedor.nome}/${provedor.modelo} — ${pendentes.length} matéria(s) pendente(s) — ` +
+      `publicação ${automatico ? "AUTOMÁTICA" : "manual (fila de revisão)"}\n`,
   );
 
+  const escritas: Escrita[] = [];
   let ok = 0;
   let semTexto = 0;
   let falhou = 0;
@@ -224,19 +250,29 @@ async function main() {
         continue;
       }
 
+      const texto = paragrafosParaTexto(nova.paragrafos);
+
       await db
         .update(articles)
         .set({
           title: nova.titulo,
           excerpt: nova.resumo,
-          content: paragrafosParaTexto(nova.paragrafos),
+          content: texto,
           rewrittenAt: new Date(),
           rewriteModel: `${provedor.nome}:${provedor.modelo}`,
-          // Vai para revisão humana, não direto ao ar.
-          status: "review",
+          // `review` (fila humana) ou `published` (direto ao ar), conforme o
+          // interruptor do painel. As travas acima valem nos dois casos: o
+          // automático pula a revisão humana, não a checagem.
+          status: estadoFinal,
         })
         .where(eq(articles.id, materia.id));
 
+      escritas.push({
+        titulo: nova.titulo,
+        veiculo: materia.veiculo,
+        slug: materia.slug,
+        caracteres: texto.length,
+      });
       ok++;
       console.log(`  ✓ ${rotulo}`);
       console.log(`    → ${nova.titulo.slice(0, 70)} (${nova.paragrafos.length} parágrafos)`);
@@ -250,7 +286,35 @@ async function main() {
   console.log(
     `\nConcluído — ${ok} reescrita(s), ${reprovadas} reprovada(s) na trava, ${semTexto} sem texto extraível, ${falhou} com erro.`,
   );
-  if (ok > 0) console.log("Aguardando revisão antes de publicar.");
+
+  if (ok === 0) return;
+
+  /**
+   * No automático a matéria já está no ar, então o cache PRECISA cair — senão
+   * ela existe no banco e não aparece no site. No manual não há o que revalidar:
+   * nada mudou para o leitor.
+   */
+  if (automatico && !(await notifyRevalidate(["articles"]))) {
+    process.exitCode = 1;
+  }
+
+  const [fila] = await db
+    .select({ total: count() })
+    .from(articles)
+    .where(eq(articles.status, "review"));
+
+  await enviarTelegram(
+    montarAviso({
+      escritas,
+      automatico,
+      filaDeRevisao: fila?.total ?? 0,
+      arquivadas: semTexto + reprovadas,
+    }),
+  );
+
+  console.log(
+    automatico ? "Publicadas direto (automático ligado)." : "Aguardando revisão antes de publicar.",
+  );
 }
 
 main().catch((erro) => {

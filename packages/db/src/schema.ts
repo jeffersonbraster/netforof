@@ -143,6 +143,24 @@ export const chants = pgTable("chants", {
   order: integer("order").notNull().default(0),
 });
 
+/**
+ * Configuração de operação, em chave/valor.
+ *
+ * Vive no banco, não em variável de ambiente, porque quem muda é o operador
+ * pelo painel — e precisa valer na hora, sem redeploy. E vive aqui, não no KV,
+ * porque quem lê do outro lado é o scraper no GitHub Actions, que não tem
+ * binding da Cloudflare mas já tem conexão com o Postgres.
+ *
+ * Chaves em uso:
+ *   publicacao_automatica — "1" manda a reescrita publicar direto, sem passar
+ *                           pela fila de revisão. Ausente ou "0" = manual.
+ */
+export const settings = pgTable("settings", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export type Source = typeof sources.$inferSelect;
 export type NewSource = typeof sources.$inferInsert;
 export type Article = typeof articles.$inferSelect;
@@ -154,3 +172,4 @@ export type Standing = typeof standings.$inferSelect;
 export type NewStanding = typeof standings.$inferInsert;
 export type Chant = typeof chants.$inferSelect;
 export type NewChant = typeof chants.$inferInsert;
+export type Setting = typeof settings.$inferSelect;

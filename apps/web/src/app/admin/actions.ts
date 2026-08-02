@@ -1,6 +1,6 @@
 "use server";
 
-import { articles, eq, inArray, isNotNull, matches, and } from "@netfor/db";
+import { articles, definirPublicacaoAutomatica, eq, inArray, isNotNull, matches, and } from "@netfor/db";
 import { revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -102,6 +102,21 @@ export async function devolverParaRevisao(
   dados: FormData,
 ): Promise<void> {
   await mudarUm(id, slug, "review", dados);
+}
+
+/**
+ * Liga/desliga a publicação automática.
+ *
+ * Só muda o que a REESCRITA faz com matéria nova: ligada, ela entra publicada
+ * em vez de parar na fila de revisão. Não mexe em nada que já está no banco —
+ * o que está aguardando revisão continua aguardando, e é isso que se quer:
+ * ligar o automático não deve despejar no ar uma fila acumulada sem ninguém
+ * ter olhado.
+ */
+export async function alternarPublicacaoAutomatica(dados: FormData): Promise<void> {
+  await exigirSessao();
+  await definirPublicacaoAutomatica(db, dados.get("ligar") === "1");
+  redirect(destinoSeguro(dados.get("voltar")));
 }
 
 function idsSelecionados(dados: FormData): number[] {

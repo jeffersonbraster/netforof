@@ -29,6 +29,13 @@
       "when": 1785560177133,
       "tag": "0003_lying_maestro",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1785637970262,
+      "tag": "0004_lazy_dark_beast",
+      "breakpoints": true
     }
   ]
 }

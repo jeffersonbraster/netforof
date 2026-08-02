@@ -55,6 +55,10 @@ jobs:
       # REWRITE_BATCH baixo de propósito — é a única etapa que custa dinheiro
       # (chamada de IA). 5 por rodada × 16 rodadas cobre folgado as ~12
       # matérias/dia que os portais publicam, sem risco de conta inesperada.
+      #
+      # REVALIDATE_*: só usados quando a publicação automática está ligada no
+      # painel — aí a matéria já entra no ar e o cache precisa cair na hora.
+      # TELEGRAM_*: opcionais; sem eles a rodada segue e só não avisa.
       - name: Reescrever matérias pendentes
         if: env.OPENAI_API_KEY != ''
         continue-on-error: true
@@ -62,6 +66,10 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           REWRITE_BATCH: "5"
+          REVALIDATE_SECRET: ${{ secrets.REVALIDATE_SECRET }}
+          REVALIDATE_URL: ${{ secrets.REVALIDATE_URL }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
 
       - name: Avisar que a reescrita foi pulada
         if: env.OPENAI_API_KEY == ''

@@ -1,8 +1,10 @@
+import { publicacaoAutomaticaLigada } from "@netfor/db";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { sessaoValida } from "@/lib/admin-auth";
+import { db } from "@/lib/db";
 import {
   contarPorEstado,
   ESTADOS,
@@ -13,6 +15,7 @@ import {
 
 import { despublicar, devolverParaRevisao, publicar, sair } from "./actions";
 import { BarraDeLote } from "./barra-de-lote";
+import { InterruptorAutomatico } from "./interruptor-automatico";
 
 type Busca = Promise<{
   estado?: string;
@@ -48,9 +51,10 @@ async function Painel({ searchParams }: { searchParams: Busca }) {
   const busca = params.q?.trim() || null;
   const pagina = Math.max(1, Number.parseInt(params.pagina ?? "1", 10) || 1);
 
-  const [lista, contagem] = await Promise.all([
+  const [lista, contagem, automatico] = await Promise.all([
     listarMaterias({ estado, busca, pagina }),
     contarPorEstado(),
+    publicacaoAutomaticaLigada(db),
   ]);
 
   const query = (extra: Record<string, string | number | null>) => {
@@ -118,6 +122,8 @@ async function Painel({ searchParams }: { searchParams: Busca }) {
           )}
         </p>
       )}
+
+      <InterruptorAutomatico ligado={automatico} voltar={urlAtual} />
 
       <nav aria-label="Filtrar por estado" className="mb-4 flex flex-wrap gap-2">
         {ESTADOS.map((e) => (
