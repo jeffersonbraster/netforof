@@ -1,5 +1,17 @@
 [
   {
+    "date": "2026-08-02",
+    "scope": "page",
+    "macrostructure": "04 · Stat-Led",
+    "theme": "custom — tricolor do Fortaleza (herdado de design.md)",
+    "theme_axes": "light+dark / display-condensed / warm (vermelho) + cool (azul)",
+    "nav": "N6 masthead (herdado)",
+    "footer": "Ft5 statement (herdado)",
+    "enrichment": "none — número grande e tabular-nums carregam",
+    "design-system": "design.md",
+    "brief": "/estatisticas · números reais do Leão para quem acompanha apostas; Stat-Led estende a família de páginas de dados, que só previa Index-First"
+  },
+  {
     "date": "2026-08-01",
     "scope": "app",
     "macrostructure": "Ecosystem Index (home) · Index-First (listagem) · Long Document (matéria)",

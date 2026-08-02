@@ -38,7 +38,7 @@ export const metadata: Metadata = {
     template: `%s | ${SITE_NAME}`,
   },
   description:
-    "Notícias do Fortaleza Esporte Clube com texto próprio e fonte creditada: últimas notícias, agenda de jogos, classificação, cantos da torcida e vídeos.",
+    "Todas as informações do Fortaleza Esporte Clube: últimas notícias, agenda de jogos, classificação, cantos da torcida, vídeos e mais.",
   manifest: "/manifest.json",
   ...(GOOGLE_SITE_VERIFICATION && { verification: { google: GOOGLE_SITE_VERIFICATION } }),
   alternates: {

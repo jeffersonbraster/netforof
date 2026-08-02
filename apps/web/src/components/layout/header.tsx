@@ -22,7 +22,6 @@ import { ThemeToggle } from "./theme-toggle";
  * qualquer manchete.
  */
 
-
 function LinhaDeJogo({ proximo }: { proximo: Match | null }) {
   if (!proximo) {
     return <span className="text-muted">Acompanhe o Leão do Pici · 24 horas por dia</span>;

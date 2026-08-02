@@ -17,9 +17,13 @@ export function SiteNav() {
 
   return (
     <nav aria-label="Seções" className="hidden border-t border-line md:block">
-      <ul className="mx-auto flex max-w-6xl items-center gap-6 px-4 font-display text-sm font-bold tracking-wide uppercase">
+      {/* `gap-5` no md e `gap-6` a partir do lg: com seis destinos, o trilho
+          encostava nos 768px e o último item corria risco de quebrar em duas
+          linhas — que o design.md proíbe em alvo clicável. */}
+      <ul className="mx-auto flex max-w-6xl items-center gap-5 px-4 font-display text-sm font-bold tracking-wide whitespace-nowrap uppercase lg:gap-6">
         {LINKS_DE_SECAO.map((link) => {
           const ativo = estaAtivo(pathname, link.href);
+          const destaque = "destaque" in link && link.destaque;
           return (
             <li key={link.href}>
               <Link
@@ -30,6 +34,11 @@ export function SiteNav() {
                 }`}
               >
                 {link.label}
+                {destaque && (
+                  <span aria-hidden className="ml-1">
+                    🔥
+                  </span>
+                )}
               </Link>
             </li>
           );

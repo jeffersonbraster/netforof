@@ -103,16 +103,27 @@ export function MobileMenu() {
               {destinos.map((destino) => {
                 const ativo =
                   destino.href === "/" ? pathname === "/" : estaAtivo(pathname, destino.href);
+                const destaque = "destaque" in destino && destino.destaque;
                 return (
                   <li key={destino.href}>
                     <Link
                       href={destino.href}
                       aria-current={ativo ? "page" : undefined}
-                      className={`block border-b border-line px-4 py-5 font-display text-2xl font-extrabold tracking-tight uppercase ${
+                      className={`flex items-center gap-3 border-b border-line px-4 py-5 font-display text-2xl font-extrabold tracking-tight uppercase ${
                         ativo ? "text-primary-text" : ""
                       }`}
                     >
                       {destino.label}
+                      {destaque && (
+                        <>
+                          <span aria-hidden>🔥</span>
+                          {/* Pílula é a única forma arredondada que o design.md
+                              autoriza, e só em badge — é exatamente este caso. */}
+                          <span className="rounded-[--radius-pill] bg-primary px-2 py-0.5 font-display text-[10px] font-bold tracking-wide text-white">
+                            Novo
+                          </span>
+                        </>
+                      )}
                     </Link>
                   </li>
                 );

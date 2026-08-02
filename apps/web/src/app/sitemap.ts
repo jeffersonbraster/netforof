@@ -39,6 +39,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     { url: `${SITE_URL}/agenda`, changeFrequency: "daily", priority: 0.8 },
     { url: `${SITE_URL}/classificacao`, changeFrequency: "daily", priority: 0.8 },
+    { url: `${SITE_URL}/estatisticas`, changeFrequency: "daily", priority: 0.8 },
     { url: `${SITE_URL}/videos`, changeFrequency: "daily", priority: 0.6 },
     { url: `${SITE_URL}/cantos-da-torcida`, changeFrequency: "monthly", priority: 0.6 },
     { url: `${SITE_URL}/sobre`, changeFrequency: "yearly", priority: 0.3 },
