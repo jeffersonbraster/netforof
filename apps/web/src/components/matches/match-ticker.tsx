@@ -63,7 +63,16 @@ function MatchCard({ match, ocultoNoCelular = false }: { match: Match; ocultoNoC
           {match.round ? ` · ${match.round}` : ""}
         </span>
         {live && <Badge variant="live">AO VIVO</Badge>}
-        {finished && <Badge variant="neutral">Encerrado</Badge>}
+        {/* "ENCERRADO" inteiro ocupa 86 dos 141px úteis do cartão de celular
+            (dois por linha), e a competição ao lado sobrava como "COPA…". "FIM"
+            é a abreviação que os placares usam e devolve a linha ao nome do
+            campeonato; do `sm` para cima o cartão tem 256px e cabe a palavra. */}
+        {finished && (
+          <Badge variant="neutral">
+            <span className="sm:hidden">Fim</span>
+            <span className="hidden sm:inline">Encerrado</span>
+          </Badge>
+        )}
       </div>
       <div className="space-y-2">
         <TeamBadge
