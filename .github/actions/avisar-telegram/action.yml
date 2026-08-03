@@ -1,0 +1,66 @@
+name: Avisar no Telegram
+description: >
+  Manda uma mensagem no bot do NETFOR. Existe para o que os scripts NÃO
+  conseguem avisar sozinhos — falha de checkout, de instalação de dependências,
+  ou processo morto pelo runner. Nesses casos o Node nunca chega a rodar, então
+  o aviso precisa vir do próprio workflow.
+
+inputs:
+  token:
+    description: TELEGRAM_BOT_TOKEN
+    required: true
+  chat:
+    description: TELEGRAM_CHAT_ID
+    required: true
+  texto:
+    description: Mensagem, em HTML do Telegram (<b>, <a href>, <code>)
+    required: true
+  citacao:
+    description: >
+      Texto de fora (mensagem de commit, erro) anexado ao fim. É ESCAPADO aqui,
+      então pode conter < e &. Sem isso o trailer "Co-Authored-By: … <e-mail>"
+      de um commit derrubaria a mensagem inteira com "can't parse entities" — o
+      aviso sumiria justamente quando havia algo para avisar.
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        TELEGRAM_TOKEN: ${{ inputs.token }}
+        TELEGRAM_CHAT: ${{ inputs.chat }}
+        TELEGRAM_TEXTO: ${{ inputs.texto }}
+        TELEGRAM_CITACAO: ${{ inputs.citacao }}
+      run: |
+        # Sem os segredos, sai em silêncio: um aviso que não pode ser enviado não
+        # deve derrubar o workflow por cima da falha que ele veio anunciar.
+        if [ -z "$TELEGRAM_TOKEN" ] || [ -z "$TELEGRAM_CHAT" ]; then
+          echo "↷ TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID ausentes — aviso não enviado."
+          exit 0
+        fi
+
+        # A citação é texto de fora e vai ESCAPADA: só a primeira linha, porque
+        # o corpo de um commit traz o trailer com <e-mail> e o assunto é o que
+        # interessa no aviso.
+        mensagem="$TELEGRAM_TEXTO"
+        if [ -n "$TELEGRAM_CITACAO" ]; then
+          citacao=$(printf '%s' "$TELEGRAM_CITACAO" | head -n 1 \
+            | sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g')
+          mensagem="${mensagem}"$'\n'"<i>${citacao}</i>"
+        fi
+
+        # `jq --arg` monta o JSON e escapa aspas, quebras de linha e acentos. A
+        # primeira versão usava %0A no corpo, que só vale em querystring: o
+        # Telegram receberia a sequência literal no meio do texto.
+        corpo=$(jq -n \
+          --arg chat "$TELEGRAM_CHAT" \
+          --arg txt "$mensagem" \
+          '{chat_id: $chat, text: $txt, parse_mode: "HTML", link_preview_options: {is_disabled: true}}')
+
+        # `|| true` no fim: falhar aqui mascararia o erro que motivou o aviso.
+        curl -sS -m 20 -X POST \
+          "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+          -H "content-type: application/json" \
+          -d "$corpo" -o /dev/null -w "Telegram: HTTP %{http_code}\n" || true

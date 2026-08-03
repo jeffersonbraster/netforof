@@ -6,6 +6,8 @@ import { createDb, eq, matches, standings, type Db } from "@netfor/db";
 
 import { fetchJson } from "../core/http";
 import { notifyRevalidate } from "../core/revalidate";
+import { avisoDeFalha, enviarTelegram } from "../core/telegram";
+import { montarAvisoDeSync } from "./aviso";
 import { syncEscalacoes } from "./escalacoes";
 
 // API pública da ESPN — dados atuais e gratuitos (API-Football free só cobre 2022–2024).
@@ -159,10 +161,37 @@ function mesmoJogo(atual: Record<string, unknown>, novo: Record<string, unknown>
  * 96 vezes por dia, quase sempre sem nenhum placar novo. Era o maior consumidor
  * de escrita no KV e o motivo de o Neon nunca chegar a suspender.
  */
-async function syncMatches(db: Db): Promise<{ total: number; mudou: boolean }> {
+/** Como o jogo aparece no aviso: "Palmeiras 3 × 0 Fortaleza". */
+function descrever(v: {
+  homeTeam: string;
+  awayTeam: string;
+  homeScore: number | null;
+  awayScore: number | null;
+  status: string;
+}): string {
+  const placar = v.homeScore === null || v.awayScore === null ? "×" : `${v.homeScore} × ${v.awayScore}`;
+  return `${v.homeTeam} ${placar} ${v.awayTeam}`;
+}
+
+const ROTULO_ESTADO: Record<string, string> = {
+  scheduled: "agendado",
+  live: "ao vivo",
+  finished: "encerrado",
+};
+
+async function syncMatches(
+  db: Db,
+): Promise<{ total: number; mudou: boolean; mudancas: string[] }> {
   const events = await coletarEventos();
   let synced = 0;
   let mudou = false;
+  /**
+   * O que mudou, em texto pronto para o aviso.
+   *
+   * Sem isto o Telegram diria só "algo mudou nos jogos", que não vale a
+   * interrupção: o ponto do aviso é saber o placar sem abrir nada.
+   */
+  const mudancas: string[] = [];
 
   const existentes = new Map(
     (await db.select().from(matches)).map((linha) => [linha.externalId, linha]),
@@ -202,21 +231,40 @@ async function syncMatches(db: Db): Promise<{ total: number; mudou: boolean }> {
     if (atual && mesmoJogo(atual as unknown as Record<string, unknown>, values)) continue;
 
     mudou = true;
+
+    // Jogo novo na agenda e placar que mexeu são coisas diferentes para quem lê
+    // o aviso: um é calendário, o outro é dia de jogo.
+    if (!atual) {
+      mudancas.push(`novo na agenda: ${values.homeTeam} × ${values.awayTeam}`);
+    } else {
+      const mudouPlacar =
+        atual.homeScore !== values.homeScore || atual.awayScore !== values.awayScore;
+      const mudouEstado = atual.status !== values.status;
+      if (mudouPlacar || mudouEstado) {
+        const estado = ROTULO_ESTADO[values.status] ?? values.status;
+        mudancas.push(`${descrever(values)} — ${estado}`);
+      } else {
+        mudancas.push(`${values.homeTeam} × ${values.awayTeam}: detalhe atualizado`);
+      }
+    }
+
     await db
       .insert(matches)
       .values({ externalId, ...values })
       .onConflictDoUpdate({ target: matches.externalId, set: values });
   }
 
-  return { total: synced, mudou };
+  return { total: synced, mudou, mudancas };
 }
 
-async function syncStandings(db: Db): Promise<{ total: number; mudou: boolean }> {
+async function syncStandings(
+  db: Db,
+): Promise<{ total: number; mudou: boolean; leao: string | null }> {
   const data = await fetchJson<EspnStandingsResponse>(STANDINGS_URL);
   const entries = data.children?.[0]?.standings?.entries ?? [];
   if (entries.length === 0) {
     console.warn("⚠️  Classificação vazia — verificar endpoint da ESPN.");
-    return { total: 0, mudou: false };
+    return { total: 0, mudou: false, leao: null };
   }
 
   const rows = entries.flatMap((entry) => {
@@ -273,7 +321,29 @@ async function syncStandings(db: Db): Promise<{ total: number; mudou: boolean }>
     }
   }
 
-  return { total: rows.length, mudou };
+  /**
+   * A linha do Fortaleza, para o aviso.
+   *
+   * "A tabela mudou" é informação inútil — muda quase toda rodada, por causa de
+   * outros times. O que interessa a quem lê é onde o Leão está agora, e se
+   * subiu ou desceu em relação ao que estava gravado.
+   */
+  const doLeao = rows.find((r) => r.teamName.toLowerCase().includes("fortaleza"));
+  let leao: string | null = null;
+  if (doLeao) {
+    const antes = [...anteriores.values()].find((l) =>
+      l.teamName.toLowerCase().includes("fortaleza"),
+    );
+    const seta =
+      antes && antes.position !== doLeao.position
+        ? antes.position > doLeao.position
+          ? ` ↑ (era ${antes.position}º)`
+          : ` ↓ (era ${antes.position}º)`
+        : "";
+    leao = `${doLeao.position}º com ${doLeao.points} pts em ${doLeao.played} jogos${seta}`;
+  }
+
+  return { total: rows.length, mudou, leao };
 }
 
 async function main() {
@@ -308,10 +378,33 @@ async function main() {
     // do cache a cada substituição.
     ...(escalacoes.gravadas > 0 ? ["lineups"] : []),
   ];
+
+  let revalidou = true;
   if (tags.length > 0) {
-    if (!(await notifyRevalidate(tags))) process.exitCode = 1;
+    revalidou = await notifyRevalidate(tags);
+    if (!revalidou) process.exitCode = 1;
   } else {
     console.log("↷ Nada mudou — cache preservado.");
+  }
+
+  /**
+   * Aviso SÓ quando algo mudou de verdade.
+   *
+   * Este job roda a cada 30 min, ~48× por dia, e na esmagadora maioria das
+   * rodadas não há novidade nenhuma. Avisar sempre encheria o Telegram de "nada
+   * mudou" e o bot seria silenciado — e aí o aviso que importa, o de dia de
+   * jogo, se perderia junto.
+   */
+  if (tags.length > 0) {
+    await enviarTelegram(
+      montarAvisoDeSync({
+        mudancasDeJogo: jogos.mudancas,
+        tabelaMudou: tabela.mudou,
+        leao: tabela.leao,
+        escalacoesGravadas: escalacoes.gravadas,
+        revalidou,
+      }),
+    );
   }
 
   console.log(
@@ -319,7 +412,22 @@ async function main() {
   );
 }
 
-main().catch((error) => {
+/**
+ * Falha fatal SEMPRE avisa.
+ *
+ * É a metade que faltava: sem aviso de erro, silêncio significaria as duas
+ * coisas ao mesmo tempo — "nada mudou" e "o job está quebrado há três dias" — e
+ * não haveria como distinguir sem abrir o Actions. Com este aviso, silêncio
+ * passa a significar só uma coisa.
+ */
+main().catch(async (error) => {
   console.error("Erro fatal no sync de jogos:", error);
+  await enviarTelegram(
+    avisoDeFalha(
+      "Sync de jogos",
+      error,
+      "Placar, tabela e escalação podem estar desatualizados no site. Log: Actions → Sync de jogos e classificação.",
+    ),
+  );
   process.exit(1);
 });

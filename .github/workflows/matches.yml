@@ -41,3 +41,24 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           REVALIDATE_SECRET: ${{ secrets.REVALIDATE_SECRET }}
           REVALIDATE_URL: ${{ secrets.REVALIDATE_URL }}
+          # O job avisa no Telegram só quando algo muda de fato — placar, tabela
+          # ou escalação. Rodada sem novidade é silenciosa de propósito: são 48
+          # execuções por dia, e avisar todas faria o bot ser silenciado.
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+      # Rede de segurança para o que o próprio script não consegue avisar:
+      # falha de checkout, de instalação, ou processo morto pelo runner. Sem
+      # isto, esse tipo de quebra some em silêncio — e silêncio é indistinguível
+      # de "nada mudou".
+      - name: Avisar falha no Telegram
+        if: failure()
+        uses: ./.github/actions/avisar-telegram
+        with:
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          chat: ${{ secrets.TELEGRAM_CHAT_ID }}
+          texto: |
+            🚨 <b>Sync de jogos</b> — o workflow falhou
+
+            Placar, tabela e escalação podem estar desatualizados no site.
+            <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">abrir o log</a>

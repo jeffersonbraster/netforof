@@ -94,11 +94,20 @@ importers:
         specifier: ^5.9.2
         version: 5.9.3
 
+  packages/notificacoes:
+    devDependencies:
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
+
   packages/scraper:
     dependencies:
       '@netfor/db':
         specifier: workspace:*
         version: link:../db
+      '@netfor/notificacoes':
+        specifier: workspace:*
+        version: link:../notificacoes
       cheerio:
         specifier: ^1.2.0
         version: 1.2.0
@@ -127,6 +136,9 @@ importers:
       '@neondatabase/serverless':
         specifier: ^1.0.1
         version: 1.1.0
+      '@netfor/notificacoes':
+        specifier: workspace:*
+        version: link:../notificacoes
     devDependencies:
       '@cloudflare/workers-types':
         specifier: ^4.20260702.1

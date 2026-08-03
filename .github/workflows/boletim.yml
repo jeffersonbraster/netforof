@@ -1,0 +1,61 @@
+name: Boletim diário
+
+# Os outros avisos falam por evento — só quando algo muda ou quebra. É o certo
+# para o volume (~160 execuções de cron por dia entre os três jobs), mas deixa
+# um buraco: sem nenhuma mensagem, "não houve novidade" e "está tudo parado há
+# três dias" são indistinguíveis.
+#
+# O boletim fecha esse buraco uma vez por dia, e fecha com evidência: ele lê o
+# banco e diz há quanto tempo cada coisa foi atualizada. Um job pode rodar sem
+# erro e mesmo assim não gravar nada — contar execuções mentiria, o frescor do
+# dado não.
+on:
+  schedule:
+    # 08:00 em Fortaleza (UTC-3). Antes do primeiro scrape do dia, que começa às
+    # 8h: assim o boletim relata a noite inteira e o dia começa com o estado real
+    # na mão.
+    - cron: "0 11 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: boletim
+  cancel-in-progress: false
+
+jobs:
+  boletim:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Instalar dependências
+        run: pnpm install --frozen-lockfile --filter @netfor/scraper --filter @netfor/db
+
+      - name: Enviar boletim
+        run: pnpm --filter @netfor/scraper boletim
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+      # O boletim existe SÓ para avisar. Se ele mesmo falhar e ninguém souber, o
+      # silêncio volta a ser ambíguo — que é justamente o que ele veio resolver.
+      - name: Avisar falha no Telegram
+        if: failure()
+        uses: ./.github/actions/avisar-telegram
+        with:
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          chat: ${{ secrets.TELEGRAM_CHAT_ID }}
+          texto: |
+            🚨 <b>Boletim diário</b> — falhou
+
+            Não consegui ler o estado do site. Os avisos por evento seguem
+            valendo.
+            <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">abrir o log</a>

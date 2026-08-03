@@ -9,7 +9,8 @@
     "tail": "wrangler tail --format pretty"
   },
   "dependencies": {
-    "@neondatabase/serverless": "^1.0.1"
+    "@neondatabase/serverless": "^1.0.1",
+    "@netfor/notificacoes": "workspace:*"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260702.1",

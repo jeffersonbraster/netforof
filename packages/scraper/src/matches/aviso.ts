@@ -1,0 +1,69 @@
+import { agoraEmFortaleza, escaparHtml, MARCA } from "../core/telegram";
+
+/**
+ * Texto do aviso do sync de jogos.
+ *
+ * Separado do `index.ts` pelo mesmo motivo do aviso da reescrita: aquele arquivo
+ * dispara `main()` ao ser importado, então não dá para exercitar a mensagem sem
+ * bater na ESPN e escrever no banco.
+ */
+
+const SITE = process.env.SITE_URL?.replace(/\/$/, "") || "https://netfor.com.br";
+
+/** Quantas mudanças de jogo cabem no aviso antes de virar parede de texto. */
+const TETO_DE_LINHAS = 6;
+
+export function montarAvisoDeSync(opcoes: {
+  mudancasDeJogo: string[];
+  tabelaMudou: boolean;
+  leao: string | null;
+  escalacoesGravadas: number;
+  revalidou: boolean;
+}): string {
+  const { mudancasDeJogo, tabelaMudou, leao, escalacoesGravadas, revalidou } = opcoes;
+
+  const blocos: string[] = [];
+
+  if (mudancasDeJogo.length > 0) {
+    const mostradas = mudancasDeJogo.slice(0, TETO_DE_LINHAS);
+    const restantes = mudancasDeJogo.length - mostradas.length;
+    blocos.push(
+      [
+        `${MARCA.jogos} <b>Jogos</b>`,
+        ...mostradas.map((m) => `• ${escaparHtml(m)}`),
+        restantes > 0 ? `• <i>e mais ${restantes}</i>` : null,
+      ]
+        .filter((l) => l !== null)
+        .join("\n"),
+    );
+  }
+
+  if (tabelaMudou) {
+    // Sem a linha do Leão, "a tabela mudou" não valeria a interrupção: ela muda
+    // quase toda rodada por causa de outros times.
+    blocos.push(
+      `${MARCA.tabela} <b>Classificação</b>\n• ${
+        leao ? `Fortaleza ${escaparHtml(leao)}` : "atualizada"
+      }`,
+    );
+  }
+
+  if (escalacoesGravadas > 0) {
+    const plural = escalacoesGravadas === 1 ? "escalação atualizada" : "escalações atualizadas";
+    blocos.push(
+      `${MARCA.escalacao} <b>Escalação</b>\n• ${escalacoesGravadas} ${plural} — <a href="${SITE}/escalacao">ver o campo</a>`,
+    );
+  }
+
+  /**
+   * A revalidação recusada é o caso traiçoeiro: o banco recebeu o dado novo e o
+   * job "funcionou", mas o site segue servindo a versão velha do cache. Sem esta
+   * linha o aviso mentiria por omissão — diria que o placar mudou enquanto o
+   * torcedor ainda vê o antigo.
+   */
+  const rodape = revalidou
+    ? `<i>${agoraEmFortaleza()} · cache do site renovado</i>`
+    : `${MARCA.falha} <b>A revalidação do cache foi recusada</b> — o dado está no banco, mas o site pode seguir mostrando o anterior.`;
+
+  return `${blocos.join("\n\n")}\n\n${rodape}`;
+}

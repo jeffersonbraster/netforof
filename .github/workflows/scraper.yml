@@ -60,6 +60,7 @@ jobs:
       # painel — aí a matéria já entra no ar e o cache precisa cair na hora.
       # TELEGRAM_*: opcionais; sem eles a rodada segue e só não avisa.
       - name: Reescrever matérias pendentes
+        id: reescrita
         if: env.OPENAI_API_KEY != ''
         continue-on-error: true
         run: pnpm --filter @netfor/scraper rewrite
@@ -74,3 +75,33 @@ jobs:
       - name: Avisar que a reescrita foi pulada
         if: env.OPENAI_API_KEY == ''
         run: echo "::warning::OPENAI_API_KEY ausente — matérias ficam em rascunho e nada é publicado."
+
+      # A reescrita roda com `continue-on-error`, entao uma falha dela NAO marca
+      # o job como falho e o passo de `failure()` abaixo nunca dispararia. Sem
+      # este aviso proprio, a etapa que custa dinheiro e que produz o texto
+      # publicavel poderia quebrar silenciosamente por dias — o sintoma seria uma
+      # pilha de rascunhos que ninguem ve.
+      - name: Avisar falha da reescrita
+        if: steps.reescrita.outcome == 'failure'
+        uses: ./.github/actions/avisar-telegram
+        with:
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          chat: ${{ secrets.TELEGRAM_CHAT_ID }}
+          texto: |
+            🚨 <b>Reescrita</b> — falhou nesta rodada
+
+            A coleta funcionou; o texto próprio não foi gerado. As matérias ficam
+            em <b>Sem texto próprio</b> e não vão ao ar até a reescrita voltar.
+            <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">abrir o log</a>
+
+      - name: Avisar falha no Telegram
+        if: failure()
+        uses: ./.github/actions/avisar-telegram
+        with:
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          chat: ${{ secrets.TELEGRAM_CHAT_ID }}
+          texto: |
+            🚨 <b>Coleta de matérias</b> — o workflow falhou
+
+            Nenhuma matéria nova entrou nesta rodada.
+            <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">abrir o log</a>

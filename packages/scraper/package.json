@@ -8,10 +8,12 @@
     "matches": "tsx src/matches/index.ts",
     "escalacao": "tsx src/matches/coletar-escalacao.ts",
     "typecheck": "tsc --noEmit",
-    "rewrite": "tsx src/rewrite-run.ts"
+    "rewrite": "tsx src/rewrite-run.ts",
+    "boletim": "tsx src/boletim.ts"
   },
   "dependencies": {
     "@netfor/db": "workspace:*",
+    "@netfor/notificacoes": "workspace:*",
     "cheerio": "^1.2.0",
     "drizzle-orm": "^0.45.2",
     "fast-xml-parser": "^5.10.1"
