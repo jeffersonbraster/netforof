@@ -55,6 +55,34 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
+      # Segredo do GitHub e segredo do Worker são cofres SEPARADOS: o primeiro
+      # vive na máquina que roda o deploy e desliga com ela; o segundo é lido
+      # pelo worker na borda, muito depois, via `env`. `wrangler deploy` não
+      # copia um para o outro.
+      #
+      # Este passo faz a cópia, para o GitHub ser a única fonte da verdade. Sem
+      # ele, a mesma credencial vive em dois lugares e sai de sincronia sem
+      # ninguém perceber — o sintoma seria o vigia mudo, que é indistinguível de
+      # "não houve jogo".
+      #
+      # `wrangler secret put` lê de stdin quando não há terminal, então o VALOR
+      # nunca aparece na linha de comando — que vai inteira para o log da
+      # execução. O nome é literal fixo aqui, então não passa por interpolação.
+      #
+      # Só roda quando os secrets existem: sem eles o `put` gravaria string
+      # vazia, e aí o vigia acharia que está configurado e falharia no envio.
+      - name: Sincronizar secrets do Telegram no worker
+        if: env.TELEGRAM_BOT_TOKEN != '' && env.TELEGRAM_CHAT_ID != ''
+        working-directory: packages/worker-revalidacao
+        run: |
+          printf '%s' "$TELEGRAM_BOT_TOKEN" | npx wrangler secret put TELEGRAM_BOT_TOKEN
+          printf '%s' "$TELEGRAM_CHAT_ID"   | npx wrangler secret put TELEGRAM_CHAT_ID
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
       # Deploy avisa SEMPRE, nos dois desfechos: acontece poucas vezes por dia e
       # é a única mudança que parte de uma acao humana. Saber que o que foi
       # empurrado chegou (ou nao) ao ar vale a mensagem.
