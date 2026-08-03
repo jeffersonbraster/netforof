@@ -25,11 +25,33 @@ export default function TermosPage() {
           </p>
         </section>
 
-        <section className="space-y-2">
+        {/* O `id` não é decorativo: o `license` do JSON-LD (Dataset das
+            estatísticas e ImageObject da marca) aponta para /termos#licenca. Um
+            campo de licença que cai numa página genérica não descreve licença
+            nenhuma — e é isso que o Search Console cobra. */}
+        <section className="space-y-2" id="licenca">
           <h2 className="font-display text-base font-bold">2. Propriedade intelectual</h2>
           <p>
             O conteúdo editorial do NETFOR é de nossa autoria. Imagens e marcas de terceiros
             pertencem aos seus respectivos titulares.
+          </p>
+          <p>
+            As <strong>estatísticas</strong> publicadas em{" "}
+            <Link
+              href="/estatisticas"
+              className="text-link underline underline-offset-4 hover:text-foreground"
+            >
+              /estatisticas
+            </Link>{" "}
+            são apuradas por nós a partir de resultados de domínio público. Podem ser reproduzidas
+            livremente, inclusive para fins comerciais, desde que com{" "}
+            <strong>crédito ao NETFOR e link para a página de origem</strong>.
+          </p>
+          <p>
+            A <strong>marca e o logotipo do NETFOR</strong> são nossos. Podem ser reproduzidos sem
+            custo para citar, indexar ou linkar o portal, desde que sem alteração e sem sugerir
+            vínculo, patrocínio ou endosso que não exista. Qualquer outro uso depende de
+            autorização por escrito.
           </p>
           <p>
             Titulares de direitos que identifiquem necessidade de ajuste, crédito ou remoção podem

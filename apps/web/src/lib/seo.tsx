@@ -16,6 +16,34 @@ export function JsonLd({ data }: { data: Record<string, unknown> }) {
   );
 }
 
+/**
+ * `ImageObject` de imagem NOSSA (logo, ícone), com os metadados de direitos.
+ *
+ * O Search Console abre "O campo license não foi encontrado" em todo
+ * `ImageObject` sem procedência declarada. É aviso não crítico — não derruba
+ * nada — mas some da lista dizendo o que já é verdade: a marca é nossa e as
+ * condições estão nos termos.
+ *
+ * Só para imagem própria. Foto de matéria vem da fonte original (Modo A) e
+ * continua entrando como URL solta no `image` do NewsArticle, sem ImageObject:
+ * declarar licença sobre foto de terceiro seria reivindicar direito que não
+ * temos — e é exatamente o que o campo afirma.
+ */
+export function imagemDaMarca(caminho: string, largura: number, altura: number) {
+  return {
+    "@type": "ImageObject",
+    url: `${SITE_URL}${caminho}`,
+    contentUrl: `${SITE_URL}${caminho}`,
+    width: largura,
+    height: altura,
+    license: `${SITE_URL}/termos#licenca`,
+    acquireLicensePage: `${SITE_URL}/termos#licenca`,
+    creditText: SITE_NAME,
+    copyrightNotice: `© ${SITE_NAME}`,
+    creator: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },
+  };
+}
+
 export function breadcrumbJsonLd(items: Array<{ name: string; url: string }>) {
   return {
     "@context": "https://schema.org",
@@ -41,12 +69,7 @@ export const newsOrganizationJsonLd = {
   "@type": "NewsMediaOrganization",
   name: SITE_NAME,
   url: SITE_URL,
-  logo: {
-    "@type": "ImageObject",
-    url: `${SITE_URL}/icon-512.png`,
-    width: 512,
-    height: 512,
-  },
+  logo: imagemDaMarca("/icon-512.png", 512, 512),
   description:
     "Portal independente de notícias sobre o Fortaleza Esporte Clube, com conteúdo editorial próprio.",
   foundingDate: "2026",

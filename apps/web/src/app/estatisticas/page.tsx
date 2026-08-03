@@ -146,6 +146,12 @@ async function Painel() {
     url: `${SITE_URL}/estatisticas`,
     creator: { "@type": "Organization", name: "NETFOR", url: SITE_URL },
     isAccessibleForFree: true,
+    // Recomendado do `Dataset`, e o que o Search Console cobrava aqui ("o campo
+    // license não foi encontrado"). Aviso não crítico: nada saiu do índice, mas
+    // sem ele a página fica de fora do Google Dataset Search, que é justo o
+    // público que procura número de time. A URL precisa CAIR num texto que
+    // descreva a licença — daí a âncora, e não /termos solto.
+    license: `${SITE_URL}/termos#licenca`,
     ...(e.atualizadoEm && { dateModified: e.atualizadoEm.toISOString() }),
   };
 

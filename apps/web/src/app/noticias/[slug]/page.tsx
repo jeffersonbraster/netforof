@@ -13,7 +13,7 @@ import { SectionTitle } from "@/components/ui/section-title";
 import { AdSlot } from "@/components/widgets/ad-slot";
 import { formatLongDateTime } from "@/lib/format";
 import { FALLBACK_IMAGE } from "@/lib/images";
-import { breadcrumbJsonLd, JsonLd, SITE_URL } from "@/lib/seo";
+import { breadcrumbJsonLd, imagemDaMarca, JsonLd, SITE_URL } from "@/lib/seo";
 import {
   getArticleBySlug,
   getArticleDetail,
@@ -124,7 +124,7 @@ async function ArticleBody({ slug }: { slug: string }) {
       "@type": "Organization",
       name: "NETFOR",
       url: SITE_URL,
-      logo: { "@type": "ImageObject", url: `${SITE_URL}/netfor.svg` },
+      logo: imagemDaMarca("/netfor.svg", 344, 94),
     },
   };
 
