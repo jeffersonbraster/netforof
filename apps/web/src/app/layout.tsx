@@ -3,6 +3,7 @@ import { Barlow_Condensed, Inter } from "next/font/google";
 
 import Script from "next/script";
 
+import { GoogleAnalytics } from "@/components/analytics/google-analytics";
 import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
 import { ADSENSE_CLIENT } from "@/lib/ads";
@@ -94,6 +95,7 @@ export default async function RootLayout({
           {children}
         </main>
         <Footer />
+        <GoogleAnalytics />
         {/* Anúncios carregam lazy (pós-load) — não competem com o LCP */}
         {ADSENSE_CLIENT && (
           <Script

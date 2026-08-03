@@ -35,14 +35,31 @@ export default function PrivacidadePage() {
         <section className="space-y-2">
           <h2 className="font-display text-base font-bold">2. Dados que coletamos</h2>
           <p>
-            <strong>Não exigimos cadastro</strong> para navegar. Coletamos apenas métricas agregadas
-            e anônimas de audiência (contagem de leituras por matéria, sem identificar o visitante).
-            Não vendemos dados pessoais.
+            <strong>Não exigimos cadastro</strong> para navegar. Coletamos métricas de audiência:
+            contagem de leituras por matéria (agregada, feita por nós) e estatísticas de uso do
+            site pelo Google Analytics — páginas vistas, origem da visita, tipo de dispositivo e
+            região aproximada. <strong>Não identificamos você pelo nome</strong> e não vendemos
+            dados pessoais.
           </p>
         </section>
 
         <section className="space-y-2">
           <h2 className="font-display text-base font-bold">3. Cookies e publicidade</h2>
+          <p>
+            Usamos o <strong>Google Analytics 4</strong> para medir audiência. Ele grava um cookie
+            com um identificador aleatório do navegador, que serve só para distinguir uma visita da
+            outra — não guarda nome, e-mail nem endereço IP completo. Para não aparecer nessa
+            medição, instale o{" "}
+            <a
+              href="https://tools.google.com/dlpage/gaoptout"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-link underline underline-offset-4 hover:text-foreground"
+            >
+              complemento de desativação do Google Analytics
+            </a>
+            .
+          </p>
           <p>
             Exibimos anúncios do <strong>Google AdSense</strong>, que pode utilizar cookies e
             identificadores para personalizar anúncios conforme a{" "}
