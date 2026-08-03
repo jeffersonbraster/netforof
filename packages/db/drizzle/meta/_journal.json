@@ -36,6 +36,20 @@
       "when": 1785637970262,
       "tag": "0004_lazy_dark_beast",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1785718837655,
+      "tag": "0005_wandering_boomerang",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1785722585830,
+      "tag": "0006_known_ultragirl",
+      "breakpoints": true
     }
   ]
 }

@@ -2,6 +2,8 @@ import { cacheLife } from "next/cache";
 import Image from "next/image";
 import Link from "next/link";
 
+import { LINKS_DE_SECAO } from "./secoes";
+
 function InstagramIcon() {
   return (
     <svg
@@ -84,12 +86,14 @@ const socials = [
   },
 ];
 
+/**
+ * Derivado da mesma lista do menu, e não escrito à mão de novo: a cópia manual
+ * já tinha se desencontrado — Estatísticas existia no menu havia dias e nunca
+ * chegou aqui. O `destaque` (o 🔥) fica de fora de propósito: no rodapé não há
+ * nada para destacar.
+ */
 const secoes = [
-  { href: "/noticias", label: "Notícias" },
-  { href: "/agenda", label: "Agenda" },
-  { href: "/classificacao", label: "Classificação" },
-  { href: "/videos", label: "Vídeos" },
-  { href: "/cantos-da-torcida", label: "Cantos da Torcida" },
+  ...LINKS_DE_SECAO.map(({ href, label }) => ({ href, label })),
   { href: "/noticias/rss", label: "RSS" },
 ];
 

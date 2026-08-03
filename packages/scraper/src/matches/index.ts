@@ -6,6 +6,7 @@ import { createDb, eq, matches, standings, type Db } from "@netfor/db";
 
 import { fetchJson } from "../core/http";
 import { notifyRevalidate } from "../core/revalidate";
+import { syncEscalacoes } from "./escalacoes";
 
 // API pública da ESPN — dados atuais e gratuitos (API-Football free só cobre 2022–2024).
 const TEAM_ID = 6272; // Fortaleza EC
@@ -281,10 +282,32 @@ async function main() {
 
   const [jogos, tabela] = await Promise.all([syncMatches(db), syncStandings(db)]);
 
+  /**
+   * Escalações depois dos jogos, e não em paralelo: a janela é calculada a
+   * partir de `matches.kickoff_at`, então precisa ler a agenda já atualizada.
+   * Num jogo remarcado, rodar junto usaria o horário velho e perderia a coleta.
+   *
+   * Falha aqui não derruba o job: escalação é enfeite ao lado de placar e tabela.
+   */
+  let escalacoes = { gravadas: 0, jogos: 0 };
+  try {
+    escalacoes = await syncEscalacoes(db);
+  } catch (erro) {
+    console.warn("⚠️  Escalações falharam:", erro instanceof Error ? erro.message : erro);
+  }
+
   // Revalida só a tag que mudou. Sem nada novo, não toca no cache — e é esse o
   // caso na esmagadora maioria das rodadas, já que o job roda a cada 15 min mas
   // placar só muda em dia de jogo.
-  const tags = [...(jogos.mudou ? ["matches"] : []), ...(tabela.mudou ? ["standings"] : [])];
+  const tags = [
+    ...(jogos.mudou ? ["matches"] : []),
+    ...(tabela.mudou ? ["standings"] : []),
+    // Tag PRÓPRIA, separada de `matches`: a escalação muda várias vezes em dia de
+    // jogo (provável → confirmada → substituições), e `matches` é lida pelo
+    // cabeçalho de TODA página. Reaproveitar aquela tag derrubaria o site inteiro
+    // do cache a cada substituição.
+    ...(escalacoes.gravadas > 0 ? ["lineups"] : []),
+  ];
   if (tags.length > 0) {
     if (!(await notifyRevalidate(tags))) process.exitCode = 1;
   } else {
@@ -292,7 +315,7 @@ async function main() {
   }
 
   console.log(
-    `Sync de jogos concluído em ${((Date.now() - startedAt) / 1000).toFixed(1)}s — ${jogos.total} jogos, ${tabela.total} posições na tabela.`,
+    `Sync de jogos concluído em ${((Date.now() - startedAt) / 1000).toFixed(1)}s — ${jogos.total} jogos, ${tabela.total} posições na tabela, ${escalacoes.gravadas} escalação(ões) em ${escalacoes.jogos} jogo(s) na janela.`,
   );
 }
 

@@ -2,6 +2,9 @@
 export const LINKS_DE_SECAO = [
   { href: "/noticias", label: "Notícias" },
   { href: "/agenda", label: "Agenda" },
+  // Ao lado da Agenda porque é a mesma pergunta em dois tempos: quando é o jogo,
+  // e quem entra nele.
+  { href: "/escalacao", label: "Escalação" },
   { href: "/classificacao", label: "Classificação" },
   { href: "/videos", label: "Vídeos" },
   { href: "/cantos-da-torcida", label: "Cantos da Torcida" },

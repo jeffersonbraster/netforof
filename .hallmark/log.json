@@ -1,5 +1,29 @@
 [
   {
+    "date": "2026-08-03",
+    "scope": "page",
+    "macrostructure": "19 · Map/Diagram",
+    "theme": "custom — tricolor do Fortaleza (herdado de design.md)",
+    "theme_axes": "light+dark / display-condensed / warm (vermelho) + cool (azul)",
+    "nav": "N6 masthead (herdado)",
+    "footer": "Ft5 statement (herdado)",
+    "enrichment": "Tier A — campo em CSS puro (gradiente + bordas), sem imagem nem biblioteca",
+    "design-system": "design.md",
+    "brief": "/escalacao · onde cada jogador está no campo É o conteúdo, então a informação é espacial; Map/Diagram é a única macro da família que descreve isso e é nova no projeto"
+  },
+  {
+    "date": "2026-08-03",
+    "scope": "app",
+    "macrostructure": "13 · Index-First (painel — filas de trabalho)",
+    "theme": "custom — tricolor do Fortaleza (herdado de design.md)",
+    "theme_axes": "light+dark / display-condensed / warm (vermelho) + cool (azul)",
+    "nav": "trilho próprio do painel (Matérias · Jogos · Escalação · Cantos)",
+    "footer": "nenhum — ferramenta interna, não página",
+    "enrichment": "none",
+    "design-system": "design.md",
+    "brief": "/admin · o painel nasceu antes do design.md e ficou com o vocabulário antigo (rounded-lg/xl em tudo); peças unificadas em ui.tsx com a forma por função, e responsivo verificado de 320 a 1280"
+  },
+  {
     "date": "2026-08-02",
     "scope": "page",
     "macrostructure": "04 · Stat-Led",

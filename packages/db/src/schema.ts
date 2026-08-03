@@ -3,12 +3,14 @@ import {
   date,
   index,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   primaryKey,
   serial,
   text,
   timestamp,
+  unique,
 } from "drizzle-orm/pg-core";
 
 /**
@@ -115,6 +117,90 @@ export const matches = pgTable(
   (table) => [index("matches_kickoff_at_idx").on(table.kickoffAt)],
 );
 
+export const lineupSideEnum = pgEnum("lineup_side", ["home", "away"]);
+
+/**
+ * Quem escreveu a escalação.
+ *
+ * `manual` é uma TRAVA, não um rótulo: a coleta da ESPN pula todo lado marcado
+ * assim. Sem isso, o painel seria inútil como plano B — o operador digitaria os
+ * onze e o cron apagaria tudo na meia hora seguinte, sem aviso.
+ *
+ * A volta para `espn` é explícita, por botão: enquanto estiver manual, a fonte
+ * automática não encosta.
+ */
+export const lineupOriginEnum = pgEnum("lineup_origin", ["espn", "manual"]);
+
+/**
+ * Um jogador dentro de uma escalação.
+ *
+ * Guardado como JSON e não como tabela filha porque a única leitura que existe é
+ * "me dê a escalação inteira deste jogo": ninguém consulta jogador solto, ninguém
+ * junta com outra tabela, e os onze chegam e são substituídos em bloco. Uma
+ * tabela de jogadores traria FK, índice e uma migração por campo novo para
+ * sustentar uma consulta que nunca vai existir.
+ */
+export interface LineupPlayer {
+  nome: string;
+  /**
+   * Nome de transmissão, como a ESPN publica: "J. Ricardo", "M. dos Santos",
+   * "Vitinho". É o que cabe embaixo da camisa no campinho.
+   *
+   * Vem pronto da fonte de propósito. Encurtar por conta própria erra nos casos
+   * que mais aparecem no Brasil — "João Ricardo" viraria "Ricardo" e "Maurício
+   * Júnior" viraria "Júnior", que não é como ninguém chama esses jogadores.
+   */
+  nomeCurto: string | null;
+  /** Número da camisa. Nulo quando a fonte não informa. */
+  camisa: number | null;
+  /**
+   * Sigla de posição da ESPN: G, CD-L, RB, CM, AM-R, F… O sufixo -L/-R é o que
+   * diz de que lado do campo o jogador entra no desenho.
+   */
+  posicao: string | null;
+  /** 1 a 11 na ESPN; 0 ou nulo no banco de reservas. */
+  casaNaFormacao: number | null;
+  titular: boolean;
+  /** Nome de quem entrou no lugar dele. Nulo se ficou os 90. */
+  substituidoPor: string | null;
+}
+
+/**
+ * Escalação de um time num jogo — uma linha por lado.
+ *
+ * Vem do endpoint `summary` da ESPN, a mesma API que já alimenta jogos e
+ * classificação: sem chave nova, sem custo e sem fornecedor a mais. (A
+ * API-Football foi descartada aqui pelo mesmo motivo de sempre: o plano gratuito
+ * só cobre as temporadas de 2022 a 2024.)
+ *
+ * A ESPN publica a escalação cerca de uma hora antes do apito. Antes disso o
+ * `summary` responde normalmente, mas com `rosters` sem nenhum titular — por isso
+ * a coleta só grava quando existem onze de verdade, e a página só existe quando
+ * há linha aqui.
+ */
+export const lineups = pgTable(
+  "lineups",
+  {
+    id: serial("id").primaryKey(),
+    matchId: integer("match_id")
+      .notNull()
+      .references(() => matches.id, { onDelete: "cascade" }),
+    side: lineupSideEnum("side").notNull(),
+    teamName: text("team_name").notNull(),
+    teamLogo: text("team_logo"),
+    /** "4-3-3", "3-4-2-1". Nulo quando a ESPN não informa. */
+    formation: text("formation"),
+    players: jsonb("players").$type<LineupPlayer[]>().notNull(),
+    origin: lineupOriginEnum("origin").notNull().default("espn"),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    // Um lado por jogo. É o alvo do upsert: a coleta roda de meia em meia hora e
+    // precisa sobrescrever a escalação provável pela confirmada sem duplicar.
+    unique("lineups_match_side_unique").on(table.matchId, table.side),
+  ],
+);
+
 export const standings = pgTable("standings", {
   position: integer("position").primaryKey(),
   teamName: text("team_name").notNull(),
@@ -172,4 +258,6 @@ export type Standing = typeof standings.$inferSelect;
 export type NewStanding = typeof standings.$inferInsert;
 export type Chant = typeof chants.$inferSelect;
 export type NewChant = typeof chants.$inferInsert;
+export type Lineup = typeof lineups.$inferSelect;
+export type NewLineup = typeof lineups.$inferInsert;
 export type Setting = typeof settings.$inferSelect;
