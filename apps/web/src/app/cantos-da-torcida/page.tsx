@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cacheLife, cacheTag } from "next/cache";
 import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +15,12 @@ export const metadata: Metadata = {
 };
 
 export default async function CantosPage() {
+  // Mesma razão da página do canto: a tag na consulta não alcança a entrada de
+  // cache desta página, e sem ela a lista não refletia cadastro nem remoção.
+  "use cache";
+  cacheTag("chants");
+  cacheLife("days");
+
   const cantos = await getChants();
   const hinos = cantos.filter((c) => c.category === "hino");
   const demais = cantos.filter((c) => c.category !== "hino");

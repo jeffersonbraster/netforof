@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cacheLife, cacheTag } from "next/cache";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -27,6 +28,21 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 }
 
 export default async function ChantPage({ params }: { params: Params }) {
+  /**
+   * A tag PRECISA estar aqui, e não só dentro de `getChants()`.
+   *
+   * `revalidateTag("chants")` derruba a entrada da CONSULTA, mas a entrada da
+   * PÁGINA é outra: sem carregar a tag, ela seguia servindo o HTML antigo. Na
+   * prática, editar a letra pelo painel não mudava nada no site, e um canto
+   * removido continuava respondendo 200 — os dois reproduzidos em teste antes
+   * desta linha existir.
+   *
+   * É o mesmo par que /agenda já usava; faltava aqui.
+   */
+  "use cache";
+  cacheTag("chants");
+  cacheLife("days");
+
   const { slug } = await params;
   const chant = await getChantBySlug(slug);
   if (!chant) notFound();
