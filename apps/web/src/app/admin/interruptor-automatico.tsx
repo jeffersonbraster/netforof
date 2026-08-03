@@ -15,7 +15,7 @@ export function InterruptorAutomatico({ ligado, voltar }: { ligado: boolean; vol
   return (
     <form
       action={alternarPublicacaoAutomatica}
-      className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-line bg-surface p-3"
+      className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-[--radius-card] border border-line bg-surface p-3"
     >
       <input type="hidden" name="voltar" value={voltar} />
       <input type="hidden" name="ligar" value={ligado ? "0" : "1"} />

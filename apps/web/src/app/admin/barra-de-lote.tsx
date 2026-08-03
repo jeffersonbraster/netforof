@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 
-import { despublicarSelecionadas, publicarSelecionadas } from "./actions";
+import { arquivarSelecionadas, publicarSelecionadas, restaurarSelecionadas } from "./actions";
 
 /**
  * Barra de seleção em lote.
@@ -24,21 +24,23 @@ function BotaoDeLote({
   acao: (dados: FormData) => Promise<void>;
   quantas: number;
   children: React.ReactNode;
-  variante: "primaria" | "secundaria";
+  variante: "primaria" | "secundaria" | "perigo";
 }) {
   const { pending } = useFormStatus();
   const desabilitado = quantas === 0 || pending;
+
+  const tom = {
+    primaria: "bg-primary text-white hover:bg-primary/90",
+    secundaria: "border border-line text-muted hover:border-primary/50 hover:text-foreground",
+    perigo: "border border-line text-primary-text hover:border-primary/60 hover:bg-primary/10",
+  }[variante];
 
   return (
     <button
       type="submit"
       formAction={acao}
       disabled={desabilitado}
-      className={`h-9 rounded-lg px-4 text-sm font-semibold transition-colors disabled:opacity-40 ${
-        variante === "primaria"
-          ? "bg-primary text-white hover:bg-primary/90"
-          : "border border-line text-muted hover:border-primary/50"
-      }`}
+      className={`inline-flex h-9 items-center whitespace-nowrap px-4 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${tom}`}
     >
       {children}
     </button>
@@ -82,7 +84,7 @@ export function BarraDeLote({ estado }: { estado: string }) {
   return (
     <div
       ref={ancora}
-      className="sticky top-2 z-10 mb-3 flex flex-wrap items-center gap-3 rounded-xl border border-line bg-surface-2/95 px-3 py-2 backdrop-blur"
+      className="sticky top-2 z-10 mb-3 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-[--radius-card] border border-line bg-surface-2/95 px-3 py-2 backdrop-blur"
     >
       <label className="flex items-center gap-2 text-sm font-medium">
         <input
@@ -104,15 +106,25 @@ export function BarraDeLote({ estado }: { estado: string }) {
         {selecionadas} de {total} selecionada{selecionadas === 1 ? "" : "s"}
       </span>
 
+      {/*
+        Os pares mudam por aba porque o movimento útil muda: na revisão é aprovar
+        ou descartar; no ar é tirar do ar; na lixeira é restaurar. Rótulo curto —
+        "Publicar", não "Publicar selecionadas": a contagem ao lado já diz sobre
+        o quê, e o rótulo longo quebrava em duas linhas no celular.
+      */}
       <div className="ml-auto flex items-center gap-2">
-        {estado !== "published" && (
+        {estado !== "published" && estado !== "hidden" && (
           <BotaoDeLote acao={publicarSelecionadas} quantas={selecionadas} variante="primaria">
-            Publicar selecionadas
+            Publicar
           </BotaoDeLote>
         )}
-        {estado === "published" && (
-          <BotaoDeLote acao={despublicarSelecionadas} quantas={selecionadas} variante="secundaria">
-            Despublicar selecionadas
+        {estado === "hidden" ? (
+          <BotaoDeLote acao={restaurarSelecionadas} quantas={selecionadas} variante="secundaria">
+            Restaurar
+          </BotaoDeLote>
+        ) : (
+          <BotaoDeLote acao={arquivarSelecionadas} quantas={selecionadas} variante="perigo">
+            {estado === "published" ? "Despublicar" : "Descartar"}
           </BotaoDeLote>
         )}
       </div>

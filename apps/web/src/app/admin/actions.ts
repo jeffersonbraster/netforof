@@ -90,12 +90,24 @@ export async function publicar(id: number, slug: string, dados: FormData): Promi
   await mudarUm(id, slug, "published", dados);
 }
 
-/** Tira do ar sem apagar: continua editável e pode voltar. */
-export async function despublicar(id: number, slug: string, dados: FormData): Promise<void> {
+/**
+ * Manda para a lixeira (`hidden`).
+ *
+ * É um movimento só com dois nomes na tela: "Descartar" quando a matéria está
+ * aguardando revisão e não vale a pena, "Despublicar" quando já estava no ar. O
+ * destino é o mesmo — sai da fila, sai do site, continua no banco e pode voltar.
+ *
+ * NÃO existe apagar de verdade, e é de propósito: `articles.original_url` é
+ * único, e é justamente esse índice que impede o scraper de recoletar o que já
+ * passou por aqui. Apagar a linha liberaria a URL, e a matéria descartada
+ * voltaria para a fila na coleta seguinte — o operador descartaria a mesma coisa
+ * para sempre.
+ */
+export async function arquivar(id: number, slug: string, dados: FormData): Promise<void> {
   await mudarUm(id, slug, "hidden", dados);
 }
 
-/** Devolve à fila de revisão. */
+/** Devolve à fila de revisão. Tira da lixeira. */
 export async function devolverParaRevisao(
   id: number,
   slug: string,
@@ -154,11 +166,25 @@ export async function publicarSelecionadas(dados: FormData): Promise<void> {
   redirect(`${destino}${separador}lote=${quantos}&pedidas=${ids.length}`);
 }
 
-/** Tira várias do ar de uma vez. Não precisa de filtro: qualquer uma pode sair. */
-export async function despublicarSelecionadas(dados: FormData): Promise<void> {
+/**
+ * Manda várias para a lixeira. Não precisa de filtro: qualquer estado pode sair.
+ * É o par em lote de `arquivar` — mesma operação, mesmo destino.
+ */
+export async function arquivarSelecionadas(dados: FormData): Promise<void> {
   await exigirSessao();
   const ids = idsSelecionados(dados);
   const quantos = await aplicarEstado(ids, "hidden");
+
+  const destino = destinoSeguro(dados.get("voltar"));
+  const separador = destino.includes("?") ? "&" : "?";
+  redirect(`${destino}${separador}lote=${quantos}&pedidas=${ids.length}`);
+}
+
+/** Tira várias da lixeira de uma vez, de volta para a fila de revisão. */
+export async function restaurarSelecionadas(dados: FormData): Promise<void> {
+  await exigirSessao();
+  const ids = idsSelecionados(dados);
+  const quantos = await aplicarEstado(ids, "review");
 
   const destino = destinoSeguro(dados.get("voltar"));
   const separador = destino.includes("?") ? "&" : "?";

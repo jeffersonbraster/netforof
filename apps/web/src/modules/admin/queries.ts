@@ -1,4 +1,19 @@
-import { and, articles, count, desc, eq, ilike, isNotNull, or, sources, sql } from "@netfor/db";
+import {
+  and,
+  articles,
+  asc,
+  count,
+  desc,
+  eq,
+  gte,
+  ilike,
+  isNotNull,
+  matches,
+  or,
+  sources,
+  sql,
+  type Match,
+} from "@netfor/db";
 import type { SQL } from "@netfor/db";
 
 import { db } from "@/lib/db";
@@ -15,7 +30,10 @@ export const ROTULO_ESTADO: Record<Estado, string> = {
   review: "Aguardando revisão",
   published: "No ar",
   draft: "Sem texto próprio",
-  hidden: "Fora do ar",
+  // `hidden` acumula o que foi descartado na revisão e o que saiu do ar. Nas
+  // duas pontas é a mesma coisa para quem opera: a pilha do que não está no site
+  // e pode voltar. "Lixeira" é o nome que o operador usa.
+  hidden: "Lixeira",
 };
 
 export interface MateriaResumo {
@@ -138,4 +156,57 @@ export async function contarPorEstado(): Promise<Contagens> {
   const base: Contagens = { review: 0, published: 0, draft: 0, hidden: 0 };
   for (const l of linhas) base[l.estado] = l.total;
   return base;
+}
+
+/** Quanto tempo para trás a tela de jogos enxerga. */
+const JANELA_DE_JOGOS_DIAS = 21;
+
+export interface JogosDoPainel {
+  /** Já começou e ainda não está encerrado — é aqui que o placar é digitado. */
+  emCampo: Match[];
+  proximos: Match[];
+  encerrados: Match[];
+}
+
+/**
+ * Jogos para o painel.
+ *
+ * NÃO usa `getAgenda`/`getRecentResults` de propósito, e o motivo é um bug real:
+ * aquelas consultas cobrem `kickoff >= agora` (agenda) e `status = 'finished'`
+ * (resultados). Um jogo que JÁ COMEÇOU e ainda não foi marcado como encerrado não
+ * satisfaz nenhuma das duas e simplesmente sumia da tela — justamente na janela
+ * em que o operador precisa digitar o placar à mão. Foi o que aconteceu em
+ * 02/08/2026 com Palmeiras × Fortaleza.
+ *
+ * Aqui a janela é contínua: tudo dos últimos 21 dias em diante, sem filtro de
+ * estado, separado em três grupos por tempo e não por `status`. Um jogo não tem
+ * como cair fora dos três.
+ *
+ * Sem cache, como todas as consultas deste módulo: `getRecentResults` vive em
+ * `cacheLife("days")`, e um painel que mostra o banco de ontem não serve para
+ * corrigir placar.
+ */
+export async function listarJogosDoPainel(): Promise<JogosDoPainel> {
+  const agora = new Date();
+  const desde = new Date(agora.getTime() - JANELA_DE_JOGOS_DIAS * 24 * 60 * 60 * 1000);
+
+  const linhas = await db
+    .select()
+    .from(matches)
+    .where(gte(matches.kickoffAt, desde))
+    .orderBy(asc(matches.kickoffAt));
+
+  const emCampo: Match[] = [];
+  const proximos: Match[] = [];
+  const encerrados: Match[] = [];
+
+  for (const jogo of linhas) {
+    if (jogo.kickoffAt > agora) proximos.push(jogo);
+    else if (jogo.status === "finished") encerrados.push(jogo);
+    else emCampo.push(jogo);
+  }
+
+  // Encerrado é histórico: o mais recente primeiro é a ordem em que se confere.
+  encerrados.reverse();
+  return { emCampo, proximos, encerrados };
 }
