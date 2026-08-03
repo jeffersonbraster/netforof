@@ -37,6 +37,25 @@ const CF_ANALYTICS_BEACON = "https://cloudflareinsights.com";
  * lugar do anúncio, sem erro visível. Sem `NEXT_PUBLIC_ADSENSE_CLIENT` nada é
  * carregado, então liberar aqui não abre superfície nenhuma hoje.
  */
+/**
+ * Google Analytics 4. Mesma armadilha do beacon da Cloudflare, e aconteceu de
+ * novo: o gtag entrou no layout, o HTML de produção trazia a tag e o
+ * `dataLayer` recebia o `config` — mas a CSP barrava o download do
+ * googletagmanager, então gtag.js NUNCA executava e nenhum evento saía. Do
+ * lado de fora tudo parecia certo; o GA só mostraria zero, sem explicar.
+ *
+ * `script-src` para o gtag.js, `connect-src` para onde ele reporta: a coleta
+ * vai para `region1.google-analytics.com` (varia por região) e recursos extras
+ * são buscados em `analytics.google.com`. `img-src` já cobre o pixel de
+ * fallback pelo `https:` genérico.
+ */
+const GA4_SCRIPT = "https://www.googletagmanager.com";
+const GA4_BEACON = [
+  "https://*.google-analytics.com",
+  "https://*.analytics.google.com",
+  "https://www.googletagmanager.com",
+];
+
 /** Player dos cantos. Sem isto na CSP o iframe é bloqueado sem erro visível. */
 const YOUTUBE = ["https://www.youtube-nocookie.com", "https://www.youtube.com"];
 
@@ -47,6 +66,13 @@ const ADSENSE = [
   "https://*.doubleclick.net",
   "https://*.google.com",
   "https://*.gstatic.com",
+  // Antifraude do AdSense (SODAR). Apareceu bloqueado ao testar o GA com o
+  // client de anúncio preenchido no .env local: "Connecting to
+  // https://ep1.adtrafficquality.google/getconfig/sodar violates CSP". Hoje não
+  // dói porque produção ainda não tem o client, e é exatamente por isso que
+  // entra agora — pelo mesmo motivo que o resto desta lista foi liberado antes
+  // de ativar. Bloqueada, a checagem de tráfego inválido falha calada.
+  "https://*.adtrafficquality.google",
 ];
 
 /**
@@ -59,14 +85,14 @@ const DEV = process.env.NODE_ENV === "development";
 
 const CSP = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${DEV ? " 'unsafe-eval'" : ""} ${CF_ANALYTICS_SCRIPT} ${ADSENSE.join(" ")}`,
+  `script-src 'self' 'unsafe-inline'${DEV ? " 'unsafe-eval'" : ""} ${CF_ANALYTICS_SCRIPT} ${GA4_SCRIPT} ${ADSENSE.join(" ")}`,
   "style-src 'self' 'unsafe-inline'",
   // Imagens vêm dos portais agregados; o otimizador do Next serve como data:/blob:
   "img-src 'self' data: blob: https:",
   // Anúncio é servido dentro de iframe do Google.
   `frame-src 'self' ${ADSENSE.join(" ")} ${YOUTUBE.join(" ")}`,
   "font-src 'self' data:",
-  `connect-src 'self' ${CF_ANALYTICS_SCRIPT} ${CF_ANALYTICS_BEACON} ${ADSENSE.join(" ")}`,
+  `connect-src 'self' ${CF_ANALYTICS_SCRIPT} ${CF_ANALYTICS_BEACON} ${GA4_BEACON.join(" ")} ${ADSENSE.join(" ")}`,
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
