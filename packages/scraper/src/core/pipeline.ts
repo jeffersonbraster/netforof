@@ -45,7 +45,13 @@ export async function runSource(db: Db, source: NewsSource): Promise<SourceRunSu
   summary.fetched = items.length;
   if (items.length === 0) {
     // Alerta do plano (seção 11): adapter retornando 0 itens indica mudança no portal.
-    console.warn(`⚠️  [${source.slug}] retornou 0 itens — verificar se o portal mudou.`);
+    // Em fonte generalista, porém, zero é o normal — o feed chegou inteiro e nada
+    // era do Fortaleza. Ver `NewsSource.generalista`.
+    console.warn(
+      source.generalista
+        ? `· [${source.slug}] nenhuma matéria do Fortaleza no feed desta vez.`
+        : `⚠️  [${source.slug}] retornou 0 itens — verificar se o portal mudou.`,
+    );
     return summary;
   }
 

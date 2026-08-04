@@ -19,8 +19,11 @@ export function montarAvisoDeSync(opcoes: {
   leao: string | null;
   escalacoesGravadas: number;
   revalidou: boolean;
+  /** Consultas que falharam sozinhas — vazio quando tudo correu bem. */
+  falhas?: string[];
 }): string {
   const { mudancasDeJogo, tabelaMudou, leao, escalacoesGravadas, revalidou } = opcoes;
+  const falhas = opcoes.falhas ?? [];
 
   const blocos: string[] = [];
 
@@ -52,6 +55,20 @@ export function montarAvisoDeSync(opcoes: {
     const plural = escalacoesGravadas === 1 ? "escalação atualizada" : "escalações atualizadas";
     blocos.push(
       `${MARCA.escalacao} <b>Escalação</b>\n• ${escalacoesGravadas} ${plural} — <a href="${SITE}/escalacao">ver o campo</a>`,
+    );
+  }
+
+  /**
+   * Falha parcial precisa aparecer no aviso, senão a mensagem mente por omissão:
+   * anunciaria o placar novo sem dizer que a classificação ao lado dele ficou
+   * congelada na rodada passada.
+   */
+  if (falhas.length > 0) {
+    blocos.push(
+      [
+        `${MARCA.falha} <b>Parcialmente atualizado</b>`,
+        ...falhas.map((f) => `• ${escaparHtml(f)}`),
+      ].join("\n"),
     );
   }
 

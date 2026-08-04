@@ -12,6 +12,16 @@ export interface NewsSource {
   slug: string;
   name: string;
   baseUrl: string;
+  /**
+   * Portal que cobre futebol em geral, não só o Fortaleza, e por isso aplica o
+   * filtro de pertinência antes de devolver os itens.
+   *
+   * Numa fonte dessas, zero item é o resultado ESPERADO na maior parte dos dias
+   * — o feed veio inteiro e nenhuma matéria era do clube. Sem esta marca o
+   * pipeline avisava "verificar se o portal mudou" toda execução, confundindo
+   * ausência de assunto com adapter quebrado.
+   */
+  generalista?: boolean;
   fetchLatest(): Promise<RawArticle[]>;
 }
 

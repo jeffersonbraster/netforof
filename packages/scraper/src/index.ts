@@ -55,8 +55,38 @@ async function main() {
   );
 
   const totalInserted = summaries.reduce((acc, s) => acc + s.inserted, 0);
-  let hasErrors = summaries.some((s) => s.error);
+  const comErro = summaries.filter((s) => s.error);
 
+  /**
+   * Vermelho só quando NENHUMA fonte coletou.
+   *
+   * Antes bastava uma falhar para o workflow inteiro falhar. Em 04/08/2026 a
+   * ESPN fechou a API atrás do Akamai e o job passou a sair com código 1 todo
+   * dia — com os outros 6 portais coletando bem e as matérias já gravadas no
+   * banco. Alarme que dispara sem nada quebrado é alarme que se aprende a
+   * ignorar, e aí a falha real passa junto.
+   *
+   * Portal de terceiro cai, muda de HTML e volta sozinho o tempo todo: isso é
+   * operação normal de agregador, não incidente. A tabela do resumo continua
+   * mostrando o erro de cada fonte, e a coluna fica no log para quem for olhar.
+   */
+  const todasFalharam = comErro.length === summaries.length;
+  let hasErrors = todasFalharam;
+
+  if (comErro.length > 0 && !todasFalharam) {
+    console.warn(
+      `\n⚠️  ${comErro.length} de ${summaries.length} fontes falharam (${comErro
+        .map((s) => s.source)
+        .join(", ")}) — as demais coletaram, execução segue verde.`,
+    );
+  }
+
+  /**
+   * A revalidação recusada continua fatal, e não é inconsistência com a regra
+   * acima: aqui a infraestrutura é NOSSA. O dado entrou no banco e o site segue
+   * servindo cache velho — o pior desfecho possível, porque tudo parece certo
+   * por fora. É exatamente o caso que precisa acordar alguém.
+   */
   if (totalInserted > 0 && !(await notifyRevalidate(["articles"]))) {
     hasErrors = true;
   }
