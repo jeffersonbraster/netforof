@@ -4,6 +4,7 @@ config({ path: "../../.env" });
 
 import { createDb, eq, matches, standings, type Db } from "@netfor/db";
 
+import { ESPN_API } from "../core/espn";
 import { fetchJson } from "../core/http";
 import { notifyRevalidate } from "../core/revalidate";
 import { avisoDeFalha, enviarTelegram } from "../core/telegram";
@@ -12,7 +13,7 @@ import { syncEscalacoes } from "./escalacoes";
 
 // API pública da ESPN — dados atuais e gratuitos (API-Football free só cobre 2022–2024).
 const TEAM_ID = 6272; // Fortaleza EC
-const SCHEDULE_URL = `https://site.api.espn.com/apis/site/v2/sports/soccer/all/teams/${TEAM_ID}/schedule`;
+const SCHEDULE_URL = `${ESPN_API}/apis/site/v2/sports/soccer/all/teams/${TEAM_ID}/schedule`;
 
 /**
  * Ligas onde procurar jogos FUTUROS por intervalo de datas.
@@ -34,7 +35,7 @@ function intervaloDeDatas(): string {
   const fmt = (d: Date) => d.toISOString().slice(0, 10).replace(/-/g, "");
   return `${fmt(hoje)}-${fmt(fim)}`;
 }
-const STANDINGS_URL = "https://site.api.espn.com/apis/v2/sports/soccer/bra.2/standings"; // Série B 2026
+const STANDINGS_URL = `${ESPN_API}/apis/v2/sports/soccer/bra.2/standings`; // Série B 2026
 
 const competitionNames: Record<string, string> = {
   "Brazilian Serie A": "Brasileirão Série A",
@@ -116,7 +117,7 @@ async function coletarEventos(): Promise<EspnEvent[]> {
   // Futuro, liga a liga
   const intervalo = intervaloDeDatas();
   for (const liga of LIGAS_FUTURAS) {
-    const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/${liga}/scoreboard?dates=${intervalo}`;
+    const url = `${ESPN_API}/apis/site/v2/sports/soccer/${liga}/scoreboard?dates=${intervalo}`;
     try {
       const dados = await fetchJson<EspnScheduleResponse>(url);
       // No scoreboard o nome da liga vive na raiz, não em cada evento — sem
@@ -350,7 +351,47 @@ async function main() {
   const startedAt = Date.now();
   const db = createDb();
 
-  const [jogos, tabela] = await Promise.all([syncMatches(db), syncStandings(db)]);
+  /**
+   * `allSettled`, não `all`: agenda e classificação são independentes.
+   *
+   * Com `Promise.all`, a classificação estourando derrubava `main()` inteira e
+   * a AGENDA NÃO ERA GRAVADA — mesmo tendo sido coletada com sucesso. Foi assim
+   * que o bloqueio da ESPN em 04/08/2026 virou "dados desatualizados" no site:
+   * não é que a coleta tenha vindo vazia, é que o resultado bom foi descartado
+   * junto com o ruim. As duas consultas batem em endpoints diferentes e uma
+   * pode quebrar sozinha (mudança de temporada muda o caminho do standings).
+   */
+  const [resJogos, resTabela] = await Promise.allSettled([syncMatches(db), syncStandings(db)]);
+
+  const falhas: string[] = [];
+  function ou<T>(resultado: PromiseSettledResult<T>, rotulo: string, vazio: T): T {
+    if (resultado.status === "fulfilled") return resultado.value;
+    const motivo =
+      resultado.reason instanceof Error ? resultado.reason.message : String(resultado.reason);
+    console.error(`⚠️  ${rotulo} falhou: ${motivo}`);
+    falhas.push(`${rotulo}: ${motivo}`);
+    return vazio;
+  }
+
+  const jogos = ou(resJogos, "Agenda", { total: 0, mudou: false, mudancas: [] as string[] });
+  const tabela = ou(resTabela, "Classificação", {
+    total: 0,
+    mudou: false,
+    leao: null as string | null,
+  });
+
+  /**
+   * As duas fora é outra história: significa a ESPN inteira indisponível, não
+   * um endpoint. Aí vale o caminho fatal de sempre — Telegram e código 1 — em
+   * vez de gravar zero e declarar sucesso.
+   */
+  if (falhas.length === 2) {
+    throw new Error(`ESPN indisponível nas duas consultas — ${falhas.join(" | ")}`);
+  }
+
+  // Uma só fora não descarta o que funcionou, mas ainda pinta o job de vermelho:
+  // o dado bom foi salvo E você fica sabendo que metade parou de chegar.
+  if (falhas.length > 0) process.exitCode = 1;
 
   /**
    * Escalações depois dos jogos, e não em paralelo: a janela é calculada a
@@ -403,6 +444,7 @@ async function main() {
         leao: tabela.leao,
         escalacoesGravadas: escalacoes.gravadas,
         revalidou,
+        falhas,
       }),
     );
   }

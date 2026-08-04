@@ -1,5 +1,6 @@
 import { and, eq, gte, lineups, lte, matches, type Db, type LineupPlayer } from "@netfor/db";
 
+import { ESPN_API } from "../core/espn";
 import { fetchJson } from "../core/http";
 
 /**
@@ -29,7 +30,7 @@ import { fetchJson } from "../core/http";
  */
 
 /** Qualquer liga serve: o caminho é ignorado pelo endpoint (ver cabeçalho). */
-const SUMMARY_URL = "https://site.api.espn.com/apis/site/v2/sports/soccer/bra.2/summary";
+const SUMMARY_URL = `${ESPN_API}/apis/site/v2/sports/soccer/bra.2/summary`;
 
 /**
  * Janela em que vale a pena perguntar pela escalação.

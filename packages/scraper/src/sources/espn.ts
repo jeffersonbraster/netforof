@@ -1,11 +1,12 @@
 import { classifyCategory } from "../core/category";
+import { ESPN_API } from "../core/espn";
 import { fetchJson } from "../core/http";
 import { stripHtml, truncate } from "../core/text";
 import type { NewsSource, RawArticle } from "../types";
 
 // API pública (não documentada) da ESPN — mesma que alimenta o site.
 const API_URL =
-  "https://site.api.espn.com/apis/site/v2/sports/soccer/all/news?team=6272&lang=pt&region=br";
+  `${ESPN_API}/apis/site/v2/sports/soccer/all/news?team=6272&lang=pt&region=br`;
 
 interface EspnArticle {
   headline?: string;
