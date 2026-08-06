@@ -29,8 +29,14 @@ import { fetchJson } from "../core/http";
  *    contagem de titulares.
  */
 
-/** Qualquer liga serve: o caminho é ignorado pelo endpoint (ver cabeçalho). */
-const SUMMARY_URL = `${ESPN_API}/apis/site/v2/sports/soccer/bra.2/summary`;
+/**
+ * Qualquer liga serve: o caminho é ignorado pelo endpoint (ver cabeçalho).
+ *
+ * Exportado porque o plantão de dia de jogo (`matches/index.ts`) consulta o
+ * mesmo endpoint: além dos `rosters`, ele traz `header` com estado e placar,
+ * então um único pedido responde "mudou alguma coisa?" para os três dados.
+ */
+export const SUMMARY_URL = `${ESPN_API}/apis/site/v2/sports/soccer/bra.2/summary`;
 
 /**
  * Janela em que vale a pena perguntar pela escalação.

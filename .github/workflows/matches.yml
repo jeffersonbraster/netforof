@@ -21,7 +21,12 @@ concurrency:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # 10 min não cabe mais: em dia de jogo o script entra de plantão e fica
+    # acordado até a escalação sair (teto próprio de 100 min no código). O
+    # timeout aqui é a rede de segurança acima daquele teto, não o controle —
+    # quem encerra o plantão é o script. Minuto de Actions em repositório
+    # público é gratuito, então esperar acordado não custa cota.
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
 

@@ -2,14 +2,14 @@ import { config } from "dotenv";
 
 config({ path: "../../.env" });
 
-import { createDb, eq, matches, standings, type Db } from "@netfor/db";
+import { and, createDb, eq, gte, lineups, lte, matches, standings, type Db } from "@netfor/db";
 
 import { ESPN_API } from "../core/espn";
 import { fetchJson } from "../core/http";
 import { notifyRevalidate } from "../core/revalidate";
 import { avisoDeFalha, enviarTelegram } from "../core/telegram";
 import { montarAvisoDeSync } from "./aviso";
-import { syncEscalacoes } from "./escalacoes";
+import { SUMMARY_URL, syncEscalacoes } from "./escalacoes";
 
 // API pública da ESPN — dados atuais e gratuitos (API-Football free só cobre 2022–2024).
 const TEAM_ID = 6272; // Fortaleza EC
@@ -29,11 +29,33 @@ const LIGAS_FUTURAS = ["bra.2", "bra.copa_do_brazil"] as const;
 /** Janela de busca para frente, em dias. */
 const JANELA_DIAS = 75;
 
+/**
+ * A janela começa ONTEM, não hoje — e isso não é folga arbitrária.
+ *
+ * Jogo às 21:30 em Fortaleza é 00:30 UTC do dia SEGUINTE. Quando o job roda
+ * durante essa partida, `hoje` em UTC já é o dia posterior ao que a ESPN usa
+ * para indexar o evento, e o scoreboard responde sem ele. Medido em 06/08/2026,
+ * com Fortaleza x Palmeiras (Copa do Brasil) em andamento:
+ *
+ *   dates=20260806-20261019 → 0 jogos do Fortaleza
+ *   dates=20260805-20261019 → 1 jogo, o que estava sendo disputado
+ *
+ * O efeito era o pior possível: o jogo AO VIVO desaparecia da coleta, então o
+ * placar nunca subia e o `status` ficava preso em `scheduled` com a bola
+ * rolando. O banner e a agenda anunciavam como "próximo" um jogo em andamento.
+ *
+ * Um dia para trás cobre qualquer fuso a oeste de UTC. Evento repetido é
+ * inofensivo: a gravação é por `externalId`, com guarda de "mudou".
+ */
+const FOLGA_DE_FUSO_DIAS = 1;
+
 function intervaloDeDatas(): string {
-  const hoje = new Date();
-  const fim = new Date(hoje.getTime() + JANELA_DIAS * 24 * 60 * 60 * 1000);
+  const agora = Date.now();
+  const dia = 24 * 60 * 60 * 1000;
+  const inicio = new Date(agora - FOLGA_DE_FUSO_DIAS * dia);
+  const fim = new Date(agora + JANELA_DIAS * dia);
   const fmt = (d: Date) => d.toISOString().slice(0, 10).replace(/-/g, "");
-  return `${fmt(hoje)}-${fmt(fim)}`;
+  return `${fmt(inicio)}-${fmt(fim)}`;
 }
 const STANDINGS_URL = `${ESPN_API}/apis/v2/sports/soccer/bra.2/standings`; // Série B 2026
 
@@ -55,7 +77,24 @@ interface EspnCompetitor {
      *  futuros ficavam sem escudo. */
     logo?: string;
   };
-  score?: { value?: number };
+  /**
+   * Mesma divergência do escudo acima, e com consequência pior.
+   *
+   * `schedule` devolve objeto — `{ value: 3, displayValue: "3" }` — e
+   * `scoreboard` devolve a STRING `"0"`. O código lia só `score.value`, então
+   * todo jogo vindo do scoreboard gravava placar nulo. Como é o scoreboard que
+   * traz o jogo em andamento, o efeito era exatamente onde mais dói: durante a
+   * partida o site mostrava "AO VIVO" sem placar nenhum. Jogo passado acertava
+   * porque vem do schedule, o que fez o defeito passar despercebido.
+   */
+  score?: { value?: number } | string | number;
+}
+
+/** Aceita as duas formas do placar. String vazia e ausência viram nulo. */
+function placar(bruto: EspnCompetitor["score"]): number | null {
+  if (bruto === undefined || bruto === null || bruto === "") return null;
+  const n = typeof bruto === "object" ? bruto.value : Number(bruto);
+  return typeof n === "number" && Number.isFinite(n) ? n : null;
 }
 
 interface EspnEvent {
@@ -217,8 +256,8 @@ async function syncMatches(
       awayTeam: away.team?.displayName ?? "?",
       homeLogo: escudo(home),
       awayLogo: escudo(away),
-      homeScore: status === "scheduled" ? null : (home.score?.value ?? null),
-      awayScore: status === "scheduled" ? null : (away.score?.value ?? null),
+      homeScore: status === "scheduled" ? null : placar(home.score),
+      awayScore: status === "scheduled" ? null : placar(away.score),
       stadium: comp?.venue?.fullName ?? null,
       kickoffAt: kickoff,
       status,
@@ -347,6 +386,199 @@ async function syncStandings(
   return { total: rows.length, mudou, leao };
 }
 
+/**
+ * ---------------------------------------------------------------------------
+ * PLANTÃO DE DIA DE JOGO
+ * ---------------------------------------------------------------------------
+ * O cron pede 30 em 30 minutos, mas o GitHub estrangula agendamento em
+ * repositório público e o intervalo REAL medido em 05/08/2026 foi de 60 a 80:
+ *
+ *   23:45  22:46  21:39  20:24  18:58  17:16  15:52  13:38
+ *
+ * A ESPN publica os onze entre 30 e 60 minutos antes do apito. Uma janela de
+ * publicação de ~40 min contra uma cadência de ~70 min não se encontram por
+ * garantia nenhuma — e foi exatamente o que aconteceu com Fortaleza x Palmeiras:
+ * o job rodou às 23:45 (escalação ainda não publicada), o jogo começou 00:30, e
+ * a execução seguinte só cairia perto de 00:50, com a bola rolando há 20 min.
+ * Nada falhou. O job simplesmente não estava acordado na hora certa.
+ *
+ * Aumentar a frequência do cron não resolve: quem decide o intervalo é o
+ * GitHub, não o arquivo. A saída é o job ficar de plantão quando há jogo
+ * próximo em vez de morrer e esperar a próxima chamada.
+ *
+ * O plantão cobre do PRÉ-JOGO ao APITO FINAL: entra antes de a escalação sair
+ * e só desliga quando a ESPN marca a partida como encerrada. Foi um erro na
+ * primeira versão desligar assim que os onze entravam — o placar voltava a
+ * depender do cron estrangulado justamente durante o jogo, e o "encerrado"
+ * podia demorar mais de uma hora para aparecer no site.
+ *
+ * ---------------------------------------------------------------------------
+ * POR QUE UMA REQUISIÇÃO SÓ POR CICLO
+ * ---------------------------------------------------------------------------
+ * O `summary?event=<id>` devolve status, placar E escalação no mesmo payload.
+ * Cada ciclo busca só isso e monta uma assinatura do estado do jogo. Se a
+ * assinatura não mudou — o caso comum, porque gol e substituição são raros
+ * dentro de 3 minutos — o ciclo termina sem tocar no banco e sem revalidar
+ * nada. O Neon suspende depois de 5 min ocioso, então um jogo inteiro custa
+ * alguns minutos de compute, não três horas. É o mesmo cuidado que já vale
+ * para o KV: revalidação cega em cronograma fixo já estourou a cota aqui.
+ */
+const PLANTAO_ANTES_MS = 75 * 60 * 1000;
+/** 3h cobre 90 min de bola, intervalo, acréscimos, prorrogação e pênaltis. */
+const PLANTAO_DEPOIS_MS = 180 * 60 * 1000;
+const PLANTAO_INTERVALO_MS = 3 * 60 * 1000;
+/** Teto duro. Sem ele, jogo adiado ou fonte travada prenderia o runner. */
+const PLANTAO_TETO_MS = 255 * 60 * 1000;
+
+const JANELA_DO_PLANTAO = { antesMs: PLANTAO_ANTES_MS, depoisMs: PLANTAO_DEPOIS_MS };
+
+interface EspnResumoDoPlantao {
+  header?: {
+    competitions?: Array<{
+      status?: { type?: { state?: string } };
+      competitors?: Array<{ homeAway?: string; score?: { value?: number } | string | number }>;
+    }>;
+  };
+  rosters?: Array<{
+    homeAway?: string;
+    formation?: string;
+    roster?: Array<{
+      starter?: boolean;
+      athlete?: { displayName?: string };
+      subbedOutFor?: { athlete?: { displayName?: string } };
+    }>;
+  }>;
+}
+
+/**
+ * Assinatura do que a página mostra. Muda quando muda gol, estado da partida,
+ * formação, titular ou substituição — e só então o ciclo escreve.
+ */
+function assinaturaDoJogo(resumo: EspnResumoDoPlantao): string {
+  const competicao = resumo.header?.competitions?.[0];
+  const estado = competicao?.status?.type?.state ?? "";
+  const placares = (competicao?.competitors ?? [])
+    .map((c) => `${c.homeAway}=${placar(c.score) ?? ""}`)
+    .join(",");
+  const elencos = (resumo.rosters ?? [])
+    .map((r) => {
+      const atletas = (r.roster ?? [])
+        .map((a) => `${a.starter ? "T" : "R"}${a.athlete?.displayName ?? ""}>${a.subbedOutFor?.athlete?.displayName ?? ""}`)
+        .join("|");
+      return `${r.homeAway}:${r.formation ?? ""}:${atletas}`;
+    })
+    .join(";");
+  return `${estado}#${placares}#${elencos}`;
+}
+
+/** Estado da ESPN que significa "acabou". */
+function encerrado(resumo: EspnResumoDoPlantao): boolean {
+  return resumo.header?.competitions?.[0]?.status?.type?.state === "post";
+}
+
+/**
+ * Jogo que justifica o plantão: está na janela e ainda tem o que atualizar —
+ * ou não terminou, ou não tem os dois lados escalados.
+ */
+async function jogoDoPlantao(
+  db: Db,
+): Promise<{ id: number; externalId: number; kickoffAt: Date } | null> {
+  const agora = Date.now();
+  const candidatos = await db
+    .select({ id: matches.id, externalId: matches.externalId, kickoffAt: matches.kickoffAt, status: matches.status })
+    .from(matches)
+    .where(
+      and(
+        gte(matches.kickoffAt, new Date(agora - PLANTAO_DEPOIS_MS)),
+        lte(matches.kickoffAt, new Date(agora + PLANTAO_ANTES_MS)),
+      ),
+    );
+
+  for (const jogo of candidatos) {
+    if (jogo.status !== "finished") return jogo;
+    const lados = await db.select().from(lineups).where(eq(lineups.matchId, jogo.id));
+    if (lados.length < 2) return jogo;
+  }
+  return null;
+}
+
+async function plantaoDeJogo(db: Db): Promise<void> {
+  const jogo = await jogoDoPlantao(db);
+  if (!jogo) return;
+
+  const limite = Date.now() + PLANTAO_TETO_MS;
+  console.log(
+    `⏱  Plantão ligado — jogo ${jogo.externalId}, apito ${jogo.kickoffAt.toISOString()}. ` +
+      `Ciclo de ${PLANTAO_INTERVALO_MS / 60000} min até o apito final.`,
+  );
+
+  let assinaturaAnterior = "";
+  let ciclos = 0;
+
+  while (Date.now() < limite) {
+    await new Promise((resolve) => setTimeout(resolve, PLANTAO_INTERVALO_MS));
+    ciclos++;
+
+    let resumo: EspnResumoDoPlantao;
+    try {
+      resumo = await fetchJson<EspnResumoDoPlantao>(`${SUMMARY_URL}?event=${jogo.externalId}`);
+    } catch (erro) {
+      console.warn(`  plantão ciclo ${ciclos}: ${erro instanceof Error ? erro.message : erro}`);
+      continue;
+    }
+
+    const assinatura = assinaturaDoJogo(resumo);
+    const acabou = encerrado(resumo);
+
+    // Nada mudou: nem banco, nem cache, nem Telegram. É o caso da maioria dos
+    // ciclos, e é o que torna o plantão barato.
+    if (assinatura === assinaturaAnterior && !acabou) continue;
+    assinaturaAnterior = assinatura;
+
+    const tags: string[] = [];
+    let gravadas = 0;
+    let mudancas: string[] = [];
+
+    try {
+      const e = await syncEscalacoes(db);
+      gravadas = e.gravadas;
+      if (gravadas > 0) tags.push("lineups");
+    } catch (erro) {
+      console.warn("  plantão/escalação:", erro instanceof Error ? erro.message : erro);
+    }
+
+    try {
+      const j = await syncMatches(db);
+      if (j.mudou) {
+        tags.push("matches");
+        mudancas = j.mudancas;
+      }
+    } catch (erro) {
+      console.warn("  plantão/jogos:", erro instanceof Error ? erro.message : erro);
+    }
+
+    if (tags.length > 0) {
+      const revalidou = await notifyRevalidate(tags);
+      await enviarTelegram(
+        montarAvisoDeSync({
+          mudancasDeJogo: mudancas,
+          tabelaMudou: false,
+          leao: null,
+          escalacoesGravadas: gravadas,
+          revalidou,
+        }),
+      );
+    }
+
+    if (acabou) {
+      console.log(`✓ Plantão encerrado — a ESPN marcou o jogo como finalizado (${ciclos} ciclos).`);
+      return;
+    }
+  }
+
+  console.log(`⏱  Plantão encerrado pelo teto de tempo após ${ciclos} ciclos.`);
+}
+
 async function main() {
   const startedAt = Date.now();
   const db = createDb();
@@ -452,6 +684,9 @@ async function main() {
   console.log(
     `Sync de jogos concluído em ${((Date.now() - startedAt) / 1000).toFixed(1)}s — ${jogos.total} jogos, ${tabela.total} posições na tabela, ${escalacoes.gravadas} escalação(ões) em ${escalacoes.jogos} jogo(s) na janela.`,
   );
+
+  // Por último, e fora do bloco de aviso acima: em dia sem jogo devolve na hora.
+  await plantaoDeJogo(db);
 }
 
 /**
