@@ -7,8 +7,18 @@ import { and, createDb, eq, gte, lineups, lte, matches, standings, type Db } fro
 import { ESPN_API } from "../core/espn";
 import { fetchJson } from "../core/http";
 import { notifyRevalidate } from "../core/revalidate";
-import { avisoDeFalha, enviarTelegram } from "../core/telegram";
-import { montarAvisoDeSync } from "./aviso";
+import { avisoDeFalha, enviarTelegram, MARCA } from "../core/telegram";
+import { montarAvisoAoVivo, montarAvisoDeSync } from "./aviso";
+import {
+  acontecimentos,
+  assinaturaDoJogo,
+  encerrado,
+  placar,
+  retratar,
+  textoDoPlacar,
+  type EspnResumoDoPlantao,
+  type Instantaneo,
+} from "./ao-vivo";
 import { SUMMARY_URL, syncEscalacoes } from "./escalacoes";
 
 // API pública da ESPN — dados atuais e gratuitos (API-Football free só cobre 2022–2024).
@@ -88,13 +98,6 @@ interface EspnCompetitor {
    * porque vem do schedule, o que fez o defeito passar despercebido.
    */
   score?: { value?: number } | string | number;
-}
-
-/** Aceita as duas formas do placar. String vazia e ausência viram nulo. */
-function placar(bruto: EspnCompetitor["score"]): number | null {
-  if (bruto === undefined || bruto === null || bruto === "") return null;
-  const n = typeof bruto === "object" ? bruto.value : Number(bruto);
-  return typeof n === "number" && Number.isFinite(n) ? n : null;
 }
 
 interface EspnEvent {
@@ -432,50 +435,6 @@ const PLANTAO_TETO_MS = 255 * 60 * 1000;
 
 const JANELA_DO_PLANTAO = { antesMs: PLANTAO_ANTES_MS, depoisMs: PLANTAO_DEPOIS_MS };
 
-interface EspnResumoDoPlantao {
-  header?: {
-    competitions?: Array<{
-      status?: { type?: { state?: string } };
-      competitors?: Array<{ homeAway?: string; score?: { value?: number } | string | number }>;
-    }>;
-  };
-  rosters?: Array<{
-    homeAway?: string;
-    formation?: string;
-    roster?: Array<{
-      starter?: boolean;
-      athlete?: { displayName?: string };
-      subbedOutFor?: { athlete?: { displayName?: string } };
-    }>;
-  }>;
-}
-
-/**
- * Assinatura do que a página mostra. Muda quando muda gol, estado da partida,
- * formação, titular ou substituição — e só então o ciclo escreve.
- */
-function assinaturaDoJogo(resumo: EspnResumoDoPlantao): string {
-  const competicao = resumo.header?.competitions?.[0];
-  const estado = competicao?.status?.type?.state ?? "";
-  const placares = (competicao?.competitors ?? [])
-    .map((c) => `${c.homeAway}=${placar(c.score) ?? ""}`)
-    .join(",");
-  const elencos = (resumo.rosters ?? [])
-    .map((r) => {
-      const atletas = (r.roster ?? [])
-        .map((a) => `${a.starter ? "T" : "R"}${a.athlete?.displayName ?? ""}>${a.subbedOutFor?.athlete?.displayName ?? ""}`)
-        .join("|");
-      return `${r.homeAway}:${r.formation ?? ""}:${atletas}`;
-    })
-    .join(";");
-  return `${estado}#${placares}#${elencos}`;
-}
-
-/** Estado da ESPN que significa "acabou". */
-function encerrado(resumo: EspnResumoDoPlantao): boolean {
-  return resumo.header?.competitions?.[0]?.status?.type?.state === "post";
-}
-
 /**
  * Jogo que justifica o plantão: está na janela e ainda tem o que atualizar —
  * ou não terminou, ou não tem os dois lados escalados.
@@ -513,6 +472,7 @@ async function plantaoDeJogo(db: Db): Promise<void> {
   );
 
   let assinaturaAnterior = "";
+  let retratoAnterior: Instantaneo | null = null;
   let ciclos = 0;
 
   while (Date.now() < limite) {
@@ -529,11 +489,17 @@ async function plantaoDeJogo(db: Db): Promise<void> {
 
     const assinatura = assinaturaDoJogo(resumo);
     const acabou = encerrado(resumo);
+    const retrato = retratar(resumo);
 
     // Nada mudou: nem banco, nem cache, nem Telegram. É o caso da maioria dos
     // ciclos, e é o que torna o plantão barato.
     if (assinatura === assinaturaAnterior && !acabou) continue;
     assinaturaAnterior = assinatura;
+
+    // O que houve entre o ciclo anterior e este — calculado ANTES dos syncs,
+    // porque é comparação entre duas leituras da ESPN, não entre banco e ESPN.
+    const novidades = retrato ? acontecimentos(retratoAnterior, retrato) : [];
+    if (retrato) retratoAnterior = retrato;
 
     const tags: string[] = [];
     let gravadas = 0;
@@ -557,17 +523,32 @@ async function plantaoDeJogo(db: Db): Promise<void> {
       console.warn("  plantão/jogos:", erro instanceof Error ? erro.message : erro);
     }
 
-    if (tags.length > 0) {
-      const revalidou = await notifyRevalidate(tags);
-      await enviarTelegram(
-        montarAvisoDeSync({
-          mudancasDeJogo: mudancas,
-          tabelaMudou: false,
-          leao: null,
-          escalacoesGravadas: gravadas,
-          revalidou,
-        }),
-      );
+    if (tags.length > 0 || novidades.length > 0) {
+      const revalidou = tags.length > 0 ? await notifyRevalidate(tags) : true;
+
+      /**
+       * Avisa pelo que ACONTECEU no jogo quando há acontecimento, e cai no
+       * boletim de sincronização só quando o banco mudou sem nada visível ter
+       * ocorrido — troca de estádio, escudo, jogo remarcado. Assim o Telegram
+       * de dia de jogo é narração, e não relatório de gravação.
+       */
+      const mensagem =
+        novidades.length > 0
+          ? montarAvisoAoVivo({
+              acontecimentos: novidades,
+              placar: retrato ? textoDoPlacar(retrato) : "",
+              relogio: retrato?.relogio ?? null,
+              revalidou,
+            })
+          : montarAvisoDeSync({
+              mudancasDeJogo: mudancas,
+              tabelaMudou: false,
+              leao: null,
+              escalacoesGravadas: gravadas,
+              revalidou,
+            });
+
+      await enviarTelegram(mensagem);
     }
 
     if (acabou) {

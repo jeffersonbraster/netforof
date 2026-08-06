@@ -13,6 +13,35 @@ const SITE = process.env.SITE_URL?.replace(/\/$/, "") || "https://netfor.com.br"
 /** Quantas mudanças de jogo cabem no aviso antes de virar parede de texto. */
 const TETO_DE_LINHAS = 6;
 
+/**
+ * Aviso de acontecimento AO VIVO, do plantão de dia de jogo.
+ *
+ * Separado do `montarAvisoDeSync` de propósito. Aquele é um boletim de
+ * sincronização — responde "o que o job gravou nesta rodada" e é o formato
+ * certo para a rotina. Em dia de jogo a pergunta é outra: "o que acabou de
+ * acontecer no jogo". Reaproveitar o outro formato entregaria "1 escalação
+ * atualizada" no lugar de "GOL do Fortaleza, 2 × 1", que é a mensagem que a
+ * pessoa quer ler sem abrir nada.
+ *
+ * Cada acontecimento já vem com a própria marca, então a mensagem é a lista
+ * crua: numa notificação de celular, cabeçalho genérico só empurra o que
+ * importa para baixo da dobra.
+ */
+export function montarAvisoAoVivo(opcoes: {
+  acontecimentos: string[];
+  placar: string;
+  relogio: string | null;
+  revalidou: boolean;
+}): string {
+  const { acontecimentos, placar, relogio, revalidou } = opcoes;
+
+  const rodape = revalidou
+    ? `<i>${escaparHtml(placar)}${relogio ? ` · ${escaparHtml(relogio)}` : ""} · ${agoraEmFortaleza()}</i>`
+    : `${MARCA.falha} <b>O site pode estar mostrando o placar anterior</b> — a revalidação do cache foi recusada.`;
+
+  return `${acontecimentos.join("\n")}\n\n${rodape}`;
+}
+
 export function montarAvisoDeSync(opcoes: {
   mudancasDeJogo: string[];
   tabelaMudou: boolean;
