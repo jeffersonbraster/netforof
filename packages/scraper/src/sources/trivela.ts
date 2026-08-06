@@ -14,6 +14,7 @@ export const trivela: NewsSource = {
   slug: "trivela",
   name: "Trivela",
   baseUrl: "https://trivela.com.br",
+  generalista: true,
 
   async fetchLatest(): Promise<RawArticle[]> {
     const xml = await fetchText(FEED_URL);
