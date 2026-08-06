@@ -180,6 +180,38 @@ async function coletarEventos(): Promise<EspnEvent[]> {
 }
 
 /**
+ * A leitura nova é mais VELHA que a gravada?
+ *
+ * A borda da ESPN devolve cópia vencida de forma intermitente — medido em
+ * 06/08/2026, o scoreboard entregou `0 × 0 (33')` enquanto a partida estava em
+ * `2 × 2 (64')`. Sem este guarda, o comparador enxergaria "mudou", gravaria o
+ * placar velho e revalidaria o site com ele: o jogo andaria PARA TRÁS na tela
+ * do torcedor, que é pior do que ficar parado.
+ *
+ * Jogo não desanda: estado só avança (agendado → ao vivo → encerrado) e gol não
+ * é desmarcado depois do apito inicial. A exceção teórica é anulação por VAR
+ * depois de já termos gravado — rara, e o próprio plantão corrige pelo
+ * `summary`, que é a fonte fresca. Entre perder uma correção rara e publicar
+ * placar velho toda vez que a borda soluça, o guarda vale.
+ */
+const ORDEM_DO_ESTADO: Record<string, number> = { scheduled: 0, live: 1, finished: 2 };
+
+function leituraRegrediu(
+  atual: { status: string; homeScore: number | null; awayScore: number | null },
+  novo: { status: string; homeScore: number | null; awayScore: number | null },
+): boolean {
+  if ((ORDEM_DO_ESTADO[novo.status] ?? 0) < (ORDEM_DO_ESTADO[atual.status] ?? 0)) return true;
+
+  if (atual.status !== "scheduled") {
+    const golsAntes = (atual.homeScore ?? 0) + (atual.awayScore ?? 0);
+    const golsAgora = (novo.homeScore ?? 0) + (novo.awayScore ?? 0);
+    if (golsAgora < golsAntes) return true;
+  }
+
+  return false;
+}
+
+/**
  * Compara só o que a UI mostra. `undefined` vs `null` e Date vs Date exigem
  * normalização — sem isso toda comparação daria "mudou" e o guarda não serviria
  * para nada.
@@ -272,6 +304,15 @@ async function syncMatches(
     // acordar a revalidação sem motivo.
     const atual = existentes.get(externalId);
     if (atual && mesmoJogo(atual as unknown as Record<string, unknown>, values)) continue;
+
+    if (atual && leituraRegrediu(atual, values)) {
+      console.warn(
+        `  ${values.homeTeam} × ${values.awayTeam}: leitura da ESPN mais velha que o gravado ` +
+          `(${values.homeScore ?? "-"}×${values.awayScore ?? "-"}/${values.status} contra ` +
+          `${atual.homeScore ?? "-"}×${atual.awayScore ?? "-"}/${atual.status}) — ignorada.`,
+      );
+      continue;
+    }
 
     mudou = true;
 
@@ -461,6 +502,54 @@ async function jogoDoPlantao(
   return null;
 }
 
+/**
+ * Grava placar e estado do jogo em plantão a partir do `summary`.
+ *
+ * POR QUE NÃO REUSAR O `syncMatches` AQUI, que seria o óbvio: porque ele lê o
+ * `scoreboard`, e o scoreboard MENTE durante a partida. Medido em 06/08/2026,
+ * no mesmo instante e para o mesmo jogo:
+ *
+ *   summary     → Fortaleza 2 x 2 Palmeiras (64')
+ *   scoreboard  → Fortaleza 0 x 0 Palmeiras (33')
+ *
+ * O `cache-control` do scoreboard é `max-age=7`, mas a borda da ESPN entrega
+ * cópia velha de forma intermitente. Não é atraso benigno: o guarda de "mudou"
+ * veria 0×0 como diferente de 2×2, gravaria o placar velho e revalidaria o
+ * site com ele. O torcedor veria o jogo ANDAR PARA TRÁS.
+ *
+ * O `summary` é por evento, é o que a própria página de jogo da ESPN consome, e
+ * o plantão já o busca a cada ciclo. Gravar dele é mais fresco, mais preciso e
+ * ainda derruba três requisições por ciclo (schedule + dois scoreboards) para
+ * nenhuma. O `syncMatches` segue cuidando da agenda e do histórico, onde
+ * alguns minutos de atraso não fazem diferença.
+ */
+async function gravarDoResumo(
+  db: Db,
+  matchId: number,
+  retrato: Instantaneo,
+): Promise<string | null> {
+  const status = mapStatus(retrato.estado);
+  const valores = {
+    homeScore: status === "scheduled" ? null : retrato.golsCasa,
+    awayScore: status === "scheduled" ? null : retrato.golsFora,
+    status,
+  };
+
+  const [atual] = await db.select().from(matches).where(eq(matches.id, matchId));
+  if (!atual) return null;
+
+  if (
+    atual.homeScore === valores.homeScore &&
+    atual.awayScore === valores.awayScore &&
+    atual.status === valores.status
+  ) {
+    return null;
+  }
+
+  await db.update(matches).set(valores).where(eq(matches.id, matchId));
+  return `${descrever({ ...atual, ...valores })} — ${ROTULO_ESTADO[status] ?? status}`;
+}
+
 async function plantaoDeJogo(db: Db): Promise<void> {
   const jogo = await jogoDoPlantao(db);
   if (!jogo) return;
@@ -513,14 +602,18 @@ async function plantaoDeJogo(db: Db): Promise<void> {
       console.warn("  plantão/escalação:", erro instanceof Error ? erro.message : erro);
     }
 
-    try {
-      const j = await syncMatches(db);
-      if (j.mudou) {
-        tags.push("matches");
-        mudancas = j.mudancas;
+    // Placar e estado saem do `summary` já buscado neste ciclo. Ver o cabeçalho
+    // de `gravarDoResumo`: o scoreboard mente durante a partida.
+    if (retrato) {
+      try {
+        const mudanca = await gravarDoResumo(db, jogo.id, retrato);
+        if (mudanca) {
+          tags.push("matches");
+          mudancas = [mudanca];
+        }
+      } catch (erro) {
+        console.warn("  plantão/jogos:", erro instanceof Error ? erro.message : erro);
       }
-    } catch (erro) {
-      console.warn("  plantão/jogos:", erro instanceof Error ? erro.message : erro);
     }
 
     if (tags.length > 0 || novidades.length > 0) {
