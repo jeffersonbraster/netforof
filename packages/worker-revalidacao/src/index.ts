@@ -145,6 +145,29 @@ async function acordarActionsSePreciso(env: Env): Promise<void> {
     // tique seguinte, e ainda restam ~5 tentativas dentro dos 80 min.
     await env.ESTADO.put(CHAVE_DISPARO, kickoffGuardado);
     console.log(`↑ Actions acordado para o jogo de ${kickoffGuardado}`);
+
+    /**
+     * Avisa também no SUCESSO, e não só na falha.
+     *
+     * Dispara ~1,6× por semana, então não há risco de encher o Telegram — e é
+     * o único sinal de que a corrente inteira do dia de jogo começou a andar.
+     * Sem ele, "não recebi nada" significaria duas coisas indistinguíveis: o
+     * despertador não tocou, ou tocou e o resto quebrou depois. Com ele, esta
+     * mensagem é o marco zero da narração da partida: o que vier a seguir
+     * (escalação, bola rolando, gol) confirma a corrente; o silêncio depois
+     * dela aponta para o Actions, não para o vigia.
+     */
+    await enviarTelegram(
+      [
+        cabecalho(MARCA.jogos, "Despertador", "job de jogos acordado para a partida"),
+        "",
+        `Apito em ${escaparHtml(emFortaleza(kickoff))}.`,
+        "A escalação sai por volta de 1h antes, e a partir daí o placar atualiza sozinho.",
+        "",
+        `<i>${agoraEmFortaleza()} · plantão de dia de jogo iniciado</i>`,
+      ].join("\n"),
+      avisos(env),
+    );
     return;
   }
 
