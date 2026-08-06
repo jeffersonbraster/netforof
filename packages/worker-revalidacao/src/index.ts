@@ -50,6 +50,13 @@ interface Env {
    */
   TELEGRAM_BOT_TOKEN?: string;
   TELEGRAM_CHAT_ID?: string;
+  /**
+   * Token de `workflow_dispatch`. Também opcional: sem ele o vigia segue
+   * fazendo o que sempre fez, apenas sem acordar o Actions antes do jogo.
+   */
+  GITHUB_DISPATCH_TOKEN?: string;
+  GITHUB_REPO: string;
+  GITHUB_WORKFLOW: string;
 }
 
 /** Credenciais no formato do pacote de avisos (que não conhece `process.env`). */
@@ -58,6 +65,105 @@ function avisos(env: Env) {
 }
 
 const CHAVE = "vigia:proximo-jogo";
+
+/**
+ * ---------------------------------------------------------------------------
+ * DESPERTADOR DO ACTIONS
+ * ---------------------------------------------------------------------------
+ * O job de jogos do GitHub Actions tem cron de 30 min no arquivo, mas o GitHub
+ * estrangula agendamento em repositório público: o intervalo real medido em
+ * 05/08/2026 foi de 60 a 80 min, e num trecho passou de 2 horas.
+ *
+ * Isso não é detalhe. O script só entra de plantão se ALGUMA execução cair
+ * dentro da janela do jogo — e quem decide a hora dessa execução é o GitHub,
+ * não o cron. Foi o que fez a escalação de Fortaleza x Palmeiras não sair: a
+ * última execução foi 45 min antes do apito, quando a ESPN ainda não tinha
+ * publicado os onze, e a seguinte só veio com o jogo em andamento.
+ *
+ * O cron da Cloudflare, ao contrário, é confiável e roda de 15 em 15 min. Este
+ * worker já sabe o horário do próximo jogo, então é o lugar certo para garantir
+ * que exista uma execução do Actions começando antes do apito.
+ *
+ * 80 minutos de antecedência: cobre a publicação da escalação (30 a 60 min
+ * antes) com folga para o runner subir, instalar dependências e chegar ao
+ * plantão. Dispara UMA vez por jogo — a marca no KV é o que impede repetir a
+ * cada 15 min, o que enfileiraria execução em cima de execução.
+ */
+const ANTECEDENCIA_DO_DISPARO_MS = 80 * 60 * 1000;
+
+/** Apito do próximo jogo, gravado no reagendamento para o disparo não consultar o Neon. */
+const CHAVE_KICKOFF = "vigia:proximo-kickoff";
+/** Apito do jogo cujo disparo já foi feito. Sem isto, dispara a cada tique. */
+const CHAVE_DISPARO = "vigia:disparo-feito";
+
+async function dispararWorkflow(env: Env): Promise<boolean> {
+  const resposta = await fetch(
+    `https://api.github.com/repos/${env.GITHUB_REPO}/actions/workflows/${env.GITHUB_WORKFLOW}/dispatches`,
+    {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${env.GITHUB_DISPATCH_TOKEN}`,
+        accept: "application/vnd.github+json",
+        "x-github-api-version": "2022-11-28",
+        "content-type": "application/json",
+        // A API do GitHub recusa requisição sem User-Agent.
+        "user-agent": "NetForBot/1.0 (+https://netfor.com.br)",
+      },
+      body: JSON.stringify({ ref: "main" }),
+    },
+  );
+
+  if (resposta.status === 204) return true;
+
+  const corpo = await resposta.text().catch(() => "");
+  console.error(`✗ workflow_dispatch recusado: HTTP ${resposta.status} ${corpo.slice(0, 200)}`);
+  return false;
+}
+
+/**
+ * Acorda o Actions se o próximo jogo está chegando e o disparo ainda não foi
+ * feito. Só lê o KV — nada de banco, para manter o tique barato.
+ */
+async function acordarActionsSePreciso(env: Env): Promise<void> {
+  if (!env.GITHUB_DISPATCH_TOKEN) return;
+
+  const kickoffGuardado = await env.ESTADO.get(CHAVE_KICKOFF);
+  if (!kickoffGuardado) return;
+
+  const kickoff = new Date(kickoffGuardado);
+  if (Number.isNaN(kickoff.getTime())) return;
+
+  const abreEm = kickoff.getTime() - ANTECEDENCIA_DO_DISPARO_MS;
+  // Depois do apito não adianta mais acordar ninguém por antecedência: se o job
+  // caiu, o próprio cron do Actions retoma.
+  if (Date.now() < abreEm || Date.now() > kickoff.getTime()) return;
+
+  if ((await env.ESTADO.get(CHAVE_DISPARO)) === kickoffGuardado) return;
+
+  if (await dispararWorkflow(env)) {
+    // Grava DEPOIS do sucesso: disparo recusado precisa ser tentado de novo no
+    // tique seguinte, e ainda restam ~5 tentativas dentro dos 80 min.
+    await env.ESTADO.put(CHAVE_DISPARO, kickoffGuardado);
+    console.log(`↑ Actions acordado para o jogo de ${kickoffGuardado}`);
+    return;
+  }
+
+  /**
+   * Token expirado é o desfecho mais provável aqui — o fino do GitHub tem prazo
+   * de validade. Sem este aviso a degradação seria muda: o disparo pararia, o
+   * job voltaria a depender do cron estrangulado, e o sintoma apareceria só
+   * como escalação faltando num domingo. `avisarFalhaUmaVez` já garante que
+   * isto não vire alerta de 15 em 15 minutos.
+   */
+  await avisarFalhaUmaVez(
+    env,
+    avisoDeFalha(
+      "Despertador do Actions",
+      "o GitHub recusou o workflow_dispatch",
+      "Provavelmente o token expirou. Sem ele a escalação volta a depender do cron estrangulado do Actions e pode não sair. Gerar outro token fino com permissão Actions: read and write e atualizar o secret GH_DISPATCH_TOKEN no repositório.",
+    ),
+  );
+}
 
 /**
  * Quanto tempo depois do apito inicial o jogo pode ser dado como encerrado.
@@ -135,6 +241,19 @@ async function reagendar(env: Env): Promise<{ ate: Date; proximo: ProximoJogo | 
     : new Date(Date.now() + ESPERA_SEM_AGENDA_MS);
 
   await env.ESTADO.put(CHAVE, esperarAte.toISOString());
+
+  /**
+   * O apito do próximo jogo fica gravado aqui para o despertador não precisar
+   * consultar o Neon a cada 15 min — que é justamente o que este worker foi
+   * desenhado para evitar. Sem jogo futuro, a chave é apagada: deixar a antiga
+   * faria o despertador acordar o Actions para um jogo que já aconteceu.
+   */
+  if (proximo) {
+    await env.ESTADO.put(CHAVE_KICKOFF, proximo.kickoff.toISOString());
+  } else {
+    await env.ESTADO.delete(CHAVE_KICKOFF);
+  }
+
   return { ate: esperarAte, proximo };
 }
 
@@ -175,6 +294,14 @@ export default {
         console.warn(`⚠ Estado ilegível ("${guardado}") — reagendado para ${ate.toISOString()}`);
         return;
       }
+
+      /**
+       * ANTES do retorno antecipado abaixo, e não depois: entre um jogo e o
+       * seguinte o vigia passa quase todo o tempo em `Date.now() < esperarAte`,
+       * que é exatamente a faixa onde o pré-jogo acontece. Depois do `return`
+       * este código nunca rodaria.
+       */
+      await acordarActionsSePreciso(env);
 
       if (Date.now() < esperarAte.getTime()) return;
 

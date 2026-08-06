@@ -84,6 +84,23 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
 
+      # Token com que o vigia acorda o job de jogos ~80 min antes do apito. Vem
+      # daqui pelo mesmo motivo dos secrets do Telegram: o GitHub é a fonte da
+      # verdade, e credencial copiada à mão para o dashboard sai de sincronia
+      # sem ninguém perceber.
+      #
+      # `secrets` não pode ser usado em `if:`, então o valor passa antes pelo
+      # `env:` do passo e a condição olha para ele. Sem o secret, o passo é
+      # pulado e o vigia segue funcionando — só não acorda o Actions.
+      - name: Sincronizar token de dispatch no worker
+        if: env.GH_DISPATCH_TOKEN != ''
+        working-directory: packages/worker-revalidacao
+        run: printf '%s' "$GH_DISPATCH_TOKEN" | npx wrangler secret put GITHUB_DISPATCH_TOKEN
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          GH_DISPATCH_TOKEN: ${{ secrets.GH_DISPATCH_TOKEN }}
+
       # Deploy avisa SEMPRE, nos dois desfechos: acontece poucas vezes por dia e
       # é a única mudança que parte de uma acao humana. Saber que o que foi
       # empurrado chegou (ou nao) ao ar vale a mensagem.

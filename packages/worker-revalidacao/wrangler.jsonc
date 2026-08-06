@@ -21,7 +21,13 @@
     }
   ],
   "vars": {
-    "SITE_URL": "https://netfor.com.br"
+    "SITE_URL": "https://netfor.com.br",
+    // Alvo do despertador: o vigia dispara este workflow ~80 min antes do apito
+    // porque o cron do GitHub, estrangulado em repositório público, não garante
+    // execução na janela em que a escalação é publicada. Não são segredos —
+    // repositório público e nome de arquivo.
+    "GITHUB_REPO": "jeffersonbraster/netforof",
+    "GITHUB_WORKFLOW": "matches.yml"
   },
   // Sem isto o worker não grava log e a única pista de falha seria o banner
   // parado. Foi a lição do Error 1101.
@@ -30,5 +36,7 @@
     "head_sampling_rate": 1
   }
   // Secrets em runtime (definir com `wrangler secret put`):
-  //   DATABASE_URL, REVALIDATE_SECRET
+  //   DATABASE_URL, REVALIDATE_SECRET, GITHUB_DISPATCH_TOKEN
+  // Os do Telegram e o do dispatch são sincronizados pelo deploy.yml a partir
+  // dos secrets do GitHub, que é a fonte da verdade — não recriar à mão aqui.
 }
