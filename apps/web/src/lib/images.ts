@@ -2,16 +2,38 @@
 export const FALLBACK_IMAGE = "/netfor-banner.jpeg";
 
 /**
- * Portais cujo CDN devolve 403 para requisição sem `User-Agent` — exatamente o
- * que o otimizador do Next envia. Verificado no CloudFront do Diário do
- * Nordeste: sem UA = 403, com UA = 200.
+ * Portais que precisam passar pelo nosso proxy — HOJE, NENHUM.
  *
- * A solução anterior era `unoptimized`, que fazia o NAVEGADOR buscar direto na
- * CDN deles — a única imagem do site que o leitor pegava de um domínio de
- * terceiro. Agora passam pelo nosso proxy, que manda UA e entrega pelo nosso
- * domínio, e o otimizador do Next segue no caminho normalmente.
+ * ---------------------------------------------------------------------------
+ * POR QUE A LISTA ESVAZIOU
+ * ---------------------------------------------------------------------------
+ * O proxy nasceu porque o CloudFront do Diário do Nordeste devolve 403 para
+ * requisição sem `User-Agent`, e o diagnóstico da época era que o otimizador do
+ * Next não manda UA. Isso continua verdade na CDN: medido em 07/08/2026, sem o
+ * cabeçalho dá 403; com QUALQUER UA, 200.
+ *
+ * O que mudou é o outro lado. Neste runtime (OpenNext no Cloudflare) o
+ * otimizador manda um UA que a CDN aceita — a URL remota crua volta 200 em
+ * `image/webp` nas larguras 384, 750 e 1080, verificado em produção.
+ *
+ * E o proxy virou justamente o que QUEBRAVA essas imagens: o otimizador roda
+ * DENTRO do Worker, e um Worker não consegue fazer subrequisição para a própria
+ * rota dinâmica. O caminho `/api/imagem/...` respondia 200 para o mundo e
+ * falhava só para o otimizador, então toda foto do Diário do Nordeste caía no
+ * banner de fallback — provavelmente por meses, sem ninguém notar.
+ *
+ * Discriminação que fechou o diagnóstico, tudo em produção:
+ *   estático local via otimizador  → 200
+ *   remoto (glbimg) via otimizador → 200
+ *   /api/imagem/ direto            → 200
+ *   /api/imagem/ via otimizador    → falha
+ *
+ * A lista fica aqui, vazia, junto com a rota: se algum portal voltar a bloquear
+ * de um jeito que o otimizador não vença, basta reinserir o host — mas saiba
+ * que, no Cloudflare, proxiar por rota própria e otimizar depois NÃO funciona.
+ * Naquele caso o caminho é `unoptimized` apontando para o proxy.
  */
-const HOSTS_VIA_PROXY = ["verdesmares.com.br"];
+const HOSTS_VIA_PROXY: string[] = [];
 
 function precisaDeProxy(src: string): boolean {
   try {
