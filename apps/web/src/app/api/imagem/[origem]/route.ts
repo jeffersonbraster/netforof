@@ -27,14 +27,45 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 const HOSTS_PERMITIDOS = ["diariodonordeste.verdesmares.com.br", "verdesmares.com.br"];
 const MAX_BYTES = 8 * 1024 * 1024;
 
+/**
+ * Teto por IP — e ele FALHA ABERTO, de propósito.
+ *
+ * Duas armadilhas descobertas em 07/08/2026, com o mesmo sintoma: toda imagem
+ * do Diário do Nordeste caindo no banner de fallback, em produção e no dev.
+ *
+ * 1. `getCloudflareContext()` LANÇA quando não há contexto de requisição —
+ *    `next dev` não tem, e a busca interna do otimizador de imagem também não.
+ *    A exceção não era tratada, então a rota devolvia 500 e o otimizador
+ *    respondia "upstream response is invalid". Nenhuma dessas imagens chegava
+ *    ao leitor.
+ *
+ * 2. Sem `cf-connecting-ip` o código usava a chave literal `imagem:desconhecido`
+ *    — uma só para TODAS as buscas internas do otimizador. Isso não protege
+ *    ninguém (busca interna não é abuso) e derruba o portal inteiro assim que o
+ *    balde compartilhado esvazia.
+ *
+ * O limitador existe contra abuso EXTERNO, e abuso externo sempre chega com
+ * `cf-connecting-ip` preenchido pela Cloudflare. Sem esse cabeçalho não há o que
+ * limitar por IP, e recusar seria trocar uma proteção que não existe por uma
+ * falha que existe.
+ */
 async function dentroDoLimite(request: Request): Promise<boolean> {
   // `cf-connecting-ip` é preenchido pela Cloudflare e não é forjável pelo
   // cliente — ao contrário de `x-forwarded-for`.
-  const ip = request.headers.get("cf-connecting-ip") ?? "desconhecido";
-  const limitador = getCloudflareContext().env.VIEWS_RATE_LIMITER;
-  if (!limitador) return true;
-  const { success } = await limitador.limit({ key: `imagem:${ip}` });
-  return success;
+  const ip = request.headers.get("cf-connecting-ip");
+  if (!ip) return true;
+
+  try {
+    const limitador = getCloudflareContext().env.VIEWS_RATE_LIMITER;
+    if (!limitador) return true;
+    const { success } = await limitador.limit({ key: `imagem:${ip}` });
+    return success;
+  } catch {
+    // Sem contexto não dá para limitar. Servir a imagem é o desfecho seguro:
+    // o pior caso é uma requisição a mais; o outro pior caso é o portal sem
+    // foto nenhuma.
+    return true;
+  }
 }
 
 function decodificar(origem: string): string | null {
