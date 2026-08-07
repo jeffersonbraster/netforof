@@ -1,0 +1,2 @@
+ALTER TABLE "articles" ADD COLUMN "pinned_position" integer;--> statement-breakpoint
+CREATE UNIQUE INDEX "articles_pinned_position_idx" ON "articles" USING btree ("pinned_position") WHERE "articles"."pinned_position" is not null;

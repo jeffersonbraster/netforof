@@ -1,5 +1,17 @@
 [
   {
+    "date": "2026-08-06",
+    "scope": "section",
+    "macrostructure": "20 · Ecosystem Index (home, inalterada) — quatro arquétipos para a superfície de destaque",
+    "theme": "custom — tricolor do Fortaleza (herdado de design.md)",
+    "theme_axes": "light+dark / display-condensed / warm (vermelho) + cool (azul)",
+    "nav": "N6 masthead (herdado)",
+    "footer": "Ft5 statement (herdado)",
+    "enrichment": "none — estrutura carrega; a faixa uber se distingue por sangrar a margem e por campo de tinta cheio, nao por degrade",
+    "design-system": "design.md",
+    "brief": "destaque da home configuravel no painel (tres/duas/uma/uber) + fixar materia em 1/2/3; o design.md ja listava 'o arquetipo de destaque da home' como ponto de extensao, entao nao houve rotacao de macro/nav/footer"
+  },
+  {
     "date": "2026-08-03",
     "scope": "page",
     "macrostructure": "19 · Map/Diagram",

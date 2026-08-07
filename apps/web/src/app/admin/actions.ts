@@ -1,6 +1,17 @@
 "use server";
 
-import { articles, definirPublicacaoAutomatica, eq, inArray, isNotNull, matches, and } from "@netfor/db";
+import {
+  articles,
+  definirDestaqueLayout,
+  definirPublicacaoAutomatica,
+  DESTAQUE_LAYOUTS,
+  eq,
+  inArray,
+  isNotNull,
+  matches,
+  and,
+  type DestaqueLayout,
+} from "@netfor/db";
 import { revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -128,6 +139,88 @@ export async function devolverParaRevisao(
 export async function alternarPublicacaoAutomatica(dados: FormData): Promise<void> {
   await exigirSessao();
   await definirPublicacaoAutomatica(db, dados.get("ligar") === "1");
+  redirect(destinoSeguro(dados.get("voltar")));
+}
+
+/**
+ * Troca a composição do destaque da home.
+ *
+ * Revalida `config` E `articles`: o modo decide QUANTOS slots a home preenche,
+ * então mudar de `tres` para `uma` também muda quais matérias sobram para a
+ * lista de últimas. Revalidar só a configuração deixaria a lista com um buraco
+ * ou uma repetição até a próxima matéria entrar.
+ */
+export async function definirModoDestaque(dados: FormData): Promise<void> {
+  await exigirSessao();
+
+  const escolhido = String(dados.get("layout") ?? "");
+  if (!(DESTAQUE_LAYOUTS as readonly string[]).includes(escolhido)) {
+    redirect(destinoSeguro(dados.get("voltar")));
+  }
+
+  await definirDestaqueLayout(db, escolhido as DestaqueLayout);
+  revalidateTag("config", "max");
+  revalidateTag("articles", "max");
+  redirect(destinoSeguro(dados.get("voltar")));
+}
+
+/**
+ * Fixa (ou solta) uma matéria num slot do destaque.
+ *
+ * `posicao` nula solta. Antes de gravar, o slot é limpo em QUALQUER outra
+ * matéria: o índice único no banco recusaria a segunda fixação com erro de
+ * constraint, e o operador veria uma tela de erro em vez do efeito que pediu.
+ * Trocar quem ocupa o slot 1 é justamente a operação mais comum aqui.
+ *
+ * DUAS ESCRITAS SOLTAS, SEM TRANSAÇÃO — e não por descuido: o driver HTTP do
+ * Neon (`drizzle-orm/neon-http`) não suporta transação, e a primeira versão
+ * disto quebrava em produção com "No transactions support in neon-http driver".
+ * Só apareceu ao clicar o botão num navegador de verdade; o typecheck passava.
+ *
+ * A ordem importa e torna o estado intermediário inofensivo: limpar primeiro
+ * deixa o slot VAZIO por alguns milissegundos, nunca duplicado. Slot vazio a
+ * home preenche por recência; slot duplicado seria erro de constraint. E como a
+ * revalidação só acontece depois das duas escritas, esse instante não chega a
+ * ser renderizado.
+ */
+export async function fixarNoDestaque(
+  id: number,
+  posicao: number | null,
+  dados: FormData,
+): Promise<void> {
+  await exigirSessao();
+
+  if (posicao !== null && ![1, 2, 3].includes(posicao)) {
+    redirect(destinoSeguro(dados.get("voltar")));
+  }
+
+  if (posicao !== null) {
+    await db
+      .update(articles)
+      .set({ pinnedPosition: null })
+      .where(eq(articles.pinnedPosition, posicao));
+  }
+  await db.update(articles).set({ pinnedPosition: posicao }).where(eq(articles.id, id));
+
+  revalidateTag("articles", "max");
+  redirect(destinoSeguro(dados.get("voltar")));
+}
+
+/**
+ * Liga ou desliga a estrela editorial.
+ *
+ * Diferente da fixação: a estrela não escolhe POSIÇÃO, escolhe QUEM entra. As
+ * estreladas ocupam os slots que a fixação deixou livres, da mais recente para a
+ * mais antiga. É a marcação do dia a dia — um clique, sem decidir ordem —,
+ * enquanto o pino é a exceção precisa.
+ *
+ * Sem nenhuma das duas, o destaque volta a ser "as mais novas", que é o
+ * comportamento histórico e continua valendo como padrão.
+ */
+export async function alternarEstrela(id: number, ligar: boolean, dados: FormData): Promise<void> {
+  await exigirSessao();
+  await db.update(articles).set({ isHighlighted: ligar }).where(eq(articles.id, id));
+  revalidateTag("articles", "max");
   redirect(destinoSeguro(dados.get("voltar")));
 }
 

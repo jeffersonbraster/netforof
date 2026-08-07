@@ -1,7 +1,7 @@
 import { and, count, desc, eq, gte, isNotNull, ne, sql } from "@netfor/db";
 import { cacheLife, cacheTag } from "next/cache";
 
-import { articles, articleViews, sources } from "@netfor/db";
+import { articles, articleViews, destaqueLayout, sources, type DestaqueLayout } from "@netfor/db";
 
 import { db } from "@/lib/db";
 import type { ArticleCard, ArticleDetail, NewsFilters } from "./types";
@@ -32,38 +32,134 @@ function dedupeByHash<T extends { id: number }>(rows: (T & { contentHash: string
   return result;
 }
 
-export async function getHomeArticles(): Promise<{
-  hero: ArticleCard | null;
-  secondary: ArticleCard[];
+/**
+ * Composição da área de destaque da home.
+ *
+ * `destaques` vem na ordem de exibição e tem exatamente o número de slots que o
+ * modo pede — a página não precisa saber contar. `latest` nunca repete o que já
+ * está no destaque.
+ */
+export interface DestaqueDaHome {
+  destaques: ArticleCard[];
   latest: ArticleCard[];
-}> {
+}
+
+/**
+ * Monta o destaque respeitando a curadoria do painel.
+ *
+ * ---------------------------------------------------------------------------
+ * TRÊS NÍVEIS, DO MAIS EXPLÍCITO AO AUTOMÁTICO
+ * ---------------------------------------------------------------------------
+ * 1. **Fixada em slot exato (1, 2 ou 3).** Ocupa aquela posição e ponto. Fixar
+ *    em 2 e a matéria aparecer em 1 "porque havia espaço" seria pior que não ter
+ *    fixação nenhuma.
+ * 2. **Estrelada.** Entra nos slots que sobraram, da mais recente para a mais
+ *    antiga. É a curadoria do dia a dia: o editor marca o que merece destaque
+ *    sem precisar decidir a ordem exata.
+ * 3. **Recência.** Preenche o que ainda faltar. É o comportamento de sempre, e
+ *    continua sendo o que acontece quando ninguém marcou nada.
+ *
+ * Sem os dois primeiros níveis o destaque é só "as mais novas", que quase nunca
+ * é o que a capa deveria mostrar — foi exatamente essa a queixa que originou a
+ * estrela.
+ *
+ * ---------------------------------------------------------------------------
+ * A PREFERÊNCIA POR IMAGEM SÓ VALE NO AUTOMÁTICO
+ * ---------------------------------------------------------------------------
+ * Sem curadoria, o slot 1 escolhe a matéria mais recente COM foto, porque
+ * manchete sem imagem deixa um buraco na página. Mas fixação e estrela são
+ * decisão humana: se o editor marcou algo sem foto para a manchete, a escolha é
+ * dele. Sobrepor a preferência automática ali seria o sistema discordando do
+ * operador em silêncio.
+ *
+ * ---------------------------------------------------------------------------
+ * NADA É DESCARTADO AO TROCAR DE MODO
+ * ---------------------------------------------------------------------------
+ * Com o modo `uma`, uma matéria fixada em 3 fica fora do destaque e volta para a
+ * lista de últimas — mas o pino continua gravado. Trocar o modo de volta a traz
+ * de volta sem refazer nada.
+ */
+function comporDestaque(
+  candidatos: (ArticleCard & { pinnedPosition: number | null; estrelada: boolean })[],
+  slots: number,
+): DestaqueDaHome {
+  const fixadas = new Map<number, ArticleCard>();
+  for (const artigo of candidatos) {
+    const posicao = artigo.pinnedPosition;
+    if (posicao !== null && posicao >= 1 && posicao <= slots && !fixadas.has(posicao)) {
+      fixadas.set(posicao, artigo);
+    }
+  }
+
+  const usados = new Set([...fixadas.values()].map((a) => a.id));
+  const sobraram = candidatos.filter((a) => !usados.has(a.id));
+
+  // Estreladas primeiro, cada grupo já em ordem de recência (a consulta ordena).
+  const estreladas = sobraram.filter((a) => a.estrelada);
+  const automaticas = sobraram.filter((a) => !a.estrelada);
+  const livres = [...estreladas, ...automaticas];
+  const houveCuradoria = estreladas.length > 0;
+
+  const destaques: ArticleCard[] = [];
+  for (let slot = 1; slot <= slots; slot++) {
+    const fixada = fixadas.get(slot);
+    if (fixada) {
+      destaques.push(fixada);
+      continue;
+    }
+
+    const indice =
+      slot === 1 && !houveCuradoria
+        ? Math.max(
+            0,
+            livres.findIndex((a) => a.imageUrl !== null),
+          )
+        : 0;
+
+    const escolhida = livres[indice];
+    if (!escolhida) break;
+    destaques.push(escolhida);
+    livres.splice(indice, 1);
+  }
+
+  return { destaques, latest: livres.slice(0, 8) };
+}
+
+/**
+ * Modo de destaque escolhido no painel.
+ *
+ * Tag PRÓPRIA (`config`), separada de `articles`: trocar o modo não deveria
+ * derrubar do cache tudo que depende de matéria, e publicar matéria não deveria
+ * reler configuração. São dois eventos com frequências muito diferentes — o modo
+ * muda algumas vezes por mês, matéria muda a cada hora.
+ */
+export async function getDestaqueLayout(): Promise<DestaqueLayout> {
+  "use cache";
+  cacheTag("config");
+  cacheLife("days");
+
+  return destaqueLayout(db);
+}
+
+export async function getHomeArticles(slots: number): Promise<DestaqueDaHome> {
   "use cache";
   cacheTag("articles");
   cacheLife("days");
 
   const rows = await db
-    .select({ ...cardColumns, contentHash: articles.contentHash })
+    .select({
+      ...cardColumns,
+      pinnedPosition: articles.pinnedPosition,
+      estrelada: articles.isHighlighted,
+      contentHash: articles.contentHash,
+    })
     .from(articles)
     .innerJoin(sources, eq(articles.sourceId, sources.id))
     .where(eq(articles.status, "published"))
     .orderBy(desc(articles.publishedAt))
     .limit(60);
 
-  const deduped = dedupeByHash(rows);
-  const heroIndex = Math.max(
-    0,
-    deduped.findIndex((a) => a.imageUrl !== null),
-  );
-  const hero = deduped[heroIndex] ?? null;
-  const rest = deduped.filter((_, index) => index !== heroIndex);
-
-  return {
-    hero,
-    // Três no destaque: a manchete e duas ao lado. Mais que isso vira grade e a
-    // manchete perde a função de manchete.
-    secondary: rest.slice(0, 2),
-    latest: rest.slice(2, 10),
-  };
+  return comporDestaque(dedupeByHash(rows), slots);
 }
 
 export interface ArticlesPageParams {

@@ -1,6 +1,6 @@
 import { revalidateTag } from "next/cache";
 
-const ALLOWED_TAGS = new Set(["articles", "chants", "lineups", "matches", "standings"]);
+const ALLOWED_TAGS = new Set(["articles", "chants", "config", "lineups", "matches", "standings"]);
 
 /**
  * Comparação em tempo constante: `!==` sai no primeiro byte diferente e vaza,

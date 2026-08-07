@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { cacheLife, cacheTag } from "next/cache";
 
+import { SLOTS_POR_LAYOUT } from "@netfor/db";
+
 import { MatchTicker } from "@/components/matches/match-ticker";
+import { Destaque, ehFaixaLargura } from "@/components/news/destaque";
 import { DestaquesDoDia } from "@/components/news/destaques-do-dia";
-import { HeroCard, NewsCard } from "@/components/news/news-card";
-import { SpotlightCard } from "@/components/news/spotlight-card";
+import { NewsCard } from "@/components/news/news-card";
 import { ButtonLink } from "@/components/ui/button";
 import { SectionTitle } from "@/components/ui/section-title";
 import { AdSlot } from "@/components/widgets/ad-slot";
@@ -15,7 +17,12 @@ import { MostRead } from "@/components/widgets/most-read";
 import { SponsorCard } from "@/components/widgets/sponsor-card";
 import { getChants } from "@/modules/chants/queries";
 import { getRecentResults, getStandings, getTickerMatches } from "@/modules/matches/queries";
-import { getDestaquesDoDia, getHomeArticles, getMostReadWeek } from "@/modules/news/queries";
+import {
+  getDestaqueLayout,
+  getDestaquesDoDia,
+  getHomeArticles,
+  getMostReadWeek,
+} from "@/modules/news/queries";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
@@ -23,11 +30,19 @@ export const metadata: Metadata = {
 
 export default async function Home() {
   "use cache";
-  cacheTag("articles", "chants", "matches", "standings");
+  // `config` é o modo de destaque escolhido no painel. Declarar aqui não é
+  // redundância com a tag `articles`: hoje a ação do painel revalida as duas,
+  // mas a home DEPENDE do modo, e dependência não declarada é o que faz a
+  // página congelar quando alguém simplifica a ação mais tarde.
+  cacheTag("articles", "chants", "matches", "standings", "config");
   cacheLife("hours");
 
+  // O modo é lido ANTES do resto: ele decide quantos slots de destaque a query
+  // precisa preencher, e um slot a mais viraria matéria repetida em "últimas".
+  const layout = await getDestaqueLayout();
+
   const [
-    { hero, secondary, latest },
+    { destaques, latest },
     destaquesDoDia,
     mostRead,
     chants,
@@ -35,7 +50,7 @@ export default async function Home() {
     standings,
     recentResults,
   ] = await Promise.all([
-      getHomeArticles(),
+      getHomeArticles(SLOTS_POR_LAYOUT[layout]),
       getDestaquesDoDia(4),
       getMostReadWeek(),
       getChants(),
@@ -62,24 +77,16 @@ export default async function Home() {
             patrocinador fixo. */}
         <AdSlot format="leaderboard" label="Publicidade" />
 
-        {/* Superfície 1 — a manchete e duas ao lado. Capa de jornal não anuncia
-            "destaques": mostra a manchete e pronto. */}
-        {hero && (
-          <section aria-label="Manchete">
-            <div className="grid items-stretch gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-              <HeroCard article={hero} />
-              {secondary.length > 0 && (
-                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-1">
-                  {secondary.map((article) => (
-                    <SpotlightCard key={article.id} article={article} />
-                  ))}
-                </div>
-              )}
-            </div>
-          </section>
-        )}
-
+        {/* Superfície 1 — o destaque. Capa de jornal não anuncia "destaques":
+            mostra a manchete e pronto. A composição é escolhida no painel; a
+            faixa de plantão sai daqui porque sangra a margem (ver abaixo). */}
+        {!ehFaixaLargura(layout) && <Destaque layout={layout} destaques={destaques} />}
       </div>
+
+      {/* Fora do contêiner de propósito: a faixa de plantão rompe a margem, e é
+          esse rompimento que a diferencia. Mesmo lugar estrutural de
+          `DestaquesDoDia`, que também sangra. */}
+      {ehFaixaLargura(layout) && <Destaque layout={layout} destaques={destaques} />}
 
       <DestaquesDoDia itens={destaquesDoDia} />
 

@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   boolean,
   date,
@@ -11,6 +12,7 @@ import {
   text,
   timestamp,
   unique,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 /**
@@ -75,6 +77,21 @@ export const articles = pgTable(
     publishedAt: timestamp("published_at", { withTimezone: true }).notNull(),
     scrapedAt: timestamp("scraped_at", { withTimezone: true }).notNull().defaultNow(),
     isHighlighted: boolean("is_highlighted").notNull().default(false),
+    /**
+     * Posição fixada no destaque da home: 1, 2 ou 3. Nulo = não fixada.
+     *
+     * É decisão editorial, não sinal de popularidade — por isso mora aqui e não
+     * sai de view count. O slot 1 é a manchete; 2 e 3 são as posições seguintes,
+     * e quais delas existem depende do modo de destaque escolhido no painel
+     * (ver `CHAVE_DESTAQUE_LAYOUT` em config.ts). Pino além dos slots do modo
+     * fica gravado e inerte — o operador pode trocar de modo sem perder o que
+     * escolheu.
+     *
+     * O índice único parcial é o que impede duas matérias de disputarem o mesmo
+     * slot. Sem ele a ordem viraria a do banco, que é arbitrária, e o operador
+     * veria a fixação "não funcionar" de forma intermitente.
+     */
+    pinnedPosition: integer("pinned_position"),
     status: articleStatusEnum("status").notNull().default("published"),
     contentHash: text("content_hash").notNull(),
   },
@@ -82,6 +99,9 @@ export const articles = pgTable(
     index("articles_published_at_idx").on(table.publishedAt),
     index("articles_content_hash_idx").on(table.contentHash),
     index("articles_source_id_idx").on(table.sourceId),
+    uniqueIndex("articles_pinned_position_idx")
+      .on(table.pinnedPosition)
+      .where(sql`${table.pinnedPosition} is not null`),
   ],
 );
 

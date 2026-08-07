@@ -50,6 +50,10 @@ export interface MateriaResumo {
   reescritaEm: Date | null;
   temTextoProprio: boolean;
   tamanhoTexto: number;
+  /** Slot fixado no destaque da home (1, 2 ou 3); nulo quando não fixada. */
+  pino: number | null;
+  /** Marcada com a estrela: entra no destaque antes das automáticas. */
+  estrelada: boolean;
 }
 
 export interface MateriaCompleta extends MateriaResumo {
@@ -91,6 +95,8 @@ export async function listarMaterias(opcoes: {
         reescritaEm: articles.rewrittenAt,
         temTextoProprio: isNotNull(articles.content),
         tamanhoTexto: sql<number>`coalesce(length(${articles.content}), 0)::int`,
+        pino: articles.pinnedPosition,
+        estrelada: articles.isHighlighted,
       })
       .from(articles)
       .innerJoin(sources, eq(articles.sourceId, sources.id))

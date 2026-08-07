@@ -1,4 +1,4 @@
-import { publicacaoAutomaticaLigada } from "@netfor/db";
+import { destaqueLayout, publicacaoAutomaticaLigada, SLOTS_POR_LAYOUT } from "@netfor/db";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -15,7 +15,10 @@ import {
 
 import { arquivar, devolverParaRevisao, publicar } from "./actions";
 import { BarraDeLote } from "./barra-de-lote";
+import { Estrela } from "./estrela";
+import { FixarDestaque } from "./fixar-destaque";
 import { InterruptorAutomatico } from "./interruptor-automatico";
+import { SeletorDeDestaque } from "./seletor-de-destaque";
 import { Aviso, BotaoLink, BotaoMini, Cartao, TituloDaTela, Vazio } from "./ui";
 
 type Busca = Promise<{
@@ -52,10 +55,11 @@ async function Painel({ searchParams }: { searchParams: Busca }) {
   const busca = params.q?.trim() || null;
   const pagina = Math.max(1, Number.parseInt(params.pagina ?? "1", 10) || 1);
 
-  const [lista, contagem, automatico] = await Promise.all([
+  const [lista, contagem, automatico, layout] = await Promise.all([
     listarMaterias({ estado, busca, pagina }),
     contarPorEstado(),
     publicacaoAutomaticaLigada(db),
+    destaqueLayout(db),
   ]);
 
   const query = (extra: Record<string, string | number | null>) => {
@@ -106,6 +110,7 @@ async function Painel({ searchParams }: { searchParams: Busca }) {
       )}
 
       <InterruptorAutomatico ligado={automatico} voltar={urlAtual} />
+      <SeletorDeDestaque atual={layout} voltar={urlAtual} />
 
       {/* Rola na horizontal no celular: quatro abas com contagem não cabem em
           320px, e quebrar rótulo de navegação em duas linhas parece defeito. */}
@@ -194,6 +199,13 @@ async function Painel({ searchParams }: { searchParams: Busca }) {
                       className="h-full w-full object-cover"
                       loading="lazy"
                     />
+                    {/* A estrela mora aqui, sobre a capa, como o operador pediu:
+                        é onde o olho já está ao decidir se a matéria merece
+                        destaque. Só para matéria no ar — estrelar rascunho não
+                        colocaria nada na home. */}
+                    {m.estado === "published" && (
+                      <Estrela id={m.id} estrelada={m.estrelada} variante="sobreposta" />
+                    )}
                   </div>
 
                   <div className="min-w-0 flex-1">
@@ -210,6 +222,14 @@ async function Painel({ searchParams }: { searchParams: Busca }) {
                         <span>sem texto próprio</span>
                       )}
                       {!m.imagemUrl && <span>· sem capa</span>}
+                      {m.pino !== null && (
+                        <span className="rounded-[--radius-card] bg-primary px-1.5 py-0.5 text-[11px] font-bold text-white">
+                          fixada {m.pino}º
+                          {m.pino > SLOTS_POR_LAYOUT[layout] && (
+                            <span className="font-normal opacity-80"> · fora do modo</span>
+                          )}
+                        </span>
+                      )}
                     </div>
 
                     <Link
@@ -221,6 +241,24 @@ async function Painel({ searchParams }: { searchParams: Busca }) {
                     <p className="mt-1 line-clamp-2 text-sm text-muted">{m.resumo}</p>
 
                     <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                      {/* Só faz sentido em matéria no ar: fixar rascunho no
+                          destaque não colocaria nada na home, e o botão
+                          prometeria um efeito que não acontece. */}
+                      {/* Abaixo de `sm` a capa some, e com ela a estrela
+                          sobreposta — esta é a mesma ação, na fila de botões. */}
+                      {m.estado === "published" && (
+                        <span className="sm:hidden">
+                          <Estrela id={m.id} estrelada={m.estrelada} variante="inline" />
+                        </span>
+                      )}
+
+                      <FixarDestaque
+                        id={m.id}
+                        pino={m.pino}
+                        slots={SLOTS_POR_LAYOUT[layout]}
+                        publicada={m.estado === "published"}
+                      />
+
                       <BotaoMini
                         type="submit"
                         formAction={publicar.bind(null, m.id, m.slug)}
